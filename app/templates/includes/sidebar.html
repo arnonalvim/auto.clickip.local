@@ -482,15 +482,20 @@
 
         <ul class="collapse show" id="OLTs"><!-- collapse -->
             <li>
-                <a href="{{ url_for('downstream_fec_bp.downstream_fec') }}">
-                    <i class="fa fa-gear"></i>Downstream-fec
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('get_mpls_brief_bp.get_mpls_brief') }}">
-                    <i class="fa fa-gear"></i>Get Mpls VPLS
-                </a>
-            </li>
+    <a href="{{ url_for('downstream_fec_bp.downstream_fec') }}">
+        <i class="fa fa-gear"></i>Downstream-fec
+    </a>
+</li>
+<li>
+    <a href="{{ url_for('shutdown_gpon_bp.shutdown_gpon') }}">
+        <i class="fa fa-power-off"></i>Shutdown Gpon
+    </a>
+</li>
+<li>
+    <a href="{{ url_for('get_mpls_brief_bp.get_mpls_brief') }}">
+        <i class="fa fa-gear"></i>Get Mpls VPLS
+    </a>
+</li>
         </ul><!-- collapse -->
 
     </div><!-- sidenav -->
