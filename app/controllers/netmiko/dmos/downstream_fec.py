@@ -19,7 +19,7 @@ def no_downstream_fec(hostname, username, password, chassis, slot, port_id, dmos
     commands = [
         'config',
         f'interface gpon {chassis}/{slot}/{port_id} ; {dmos_command}',
-        'commit and-quit label netmiko comment "commit via netmiko automation" | suppress-validate-warning-prompt',
+        'commit and-quit label netmiko comment "auto.clickip.local" | suppress-validate-warning-prompt',
         f'show interface gpon {chassis}/{slot}/{port_id}',
     ]
 
