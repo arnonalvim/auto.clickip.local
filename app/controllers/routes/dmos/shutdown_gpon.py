@@ -38,7 +38,7 @@ def shutdown_gpon():
             dmos_command=form.dmos_command.data
         )
 
-        flash('Comando realizado!', category='success')
+        flash('Comando enviado!', category='success')
 
     else:
         if form.errors:

@@ -261,7 +261,8 @@
 
     /* ===== SEÇÕES COLAPSÁVEIS ===== */
     #OLTs,
-    #Routers {
+    #Routers,
+    #Switches {
         background: rgba(17, 24, 39, 0.6);
         border-radius: 8px;
         padding: 0.4rem;
@@ -428,50 +429,47 @@
         <a href="/"><i class="fa fa-home"></i>Home</a>
 
         <a href="#" data-bs-toggle="collapse" role="button">
-            <i class="fa fa-server"></i>Juniper
+            <i class="fa fa-network-wired"></i> Juniper
         </a><!-- toggle -->
 
         <ul class="collapse show" id="Routers"><!-- collapse -->
             <li>
                 <a href="{{ url_for('int_summary_bp.interface_summary') }}">
-                    <i class="fa fa-gear"></i>Get Summary
+                    <i class="fas fa-chalkboard-teacher"></i>Get Summary
                 </a>
             </li>
             <li>
                 <a href="{{ url_for('int_conf_bp.interface_configuration') }}">
-                    <i class="fa fa-gear"></i>Get Interface Config
+                    <i class="fas fa-chalkboard-teacher"></i>Get Interface Config
                 </a>
             </li>
             <li>
                 <a href="{{ url_for('set_policy_whitelist_bp.get_policy_whitelist') }}">
-                    <i class="fa fa-gear"></i>Get Policy Whitelist
+                    <i class="fas fa-chalkboard-teacher"></i>Get Policy Whitelist
                 </a>
             </li>
             <hr>
             <li>
                 <a href="{{ url_for('set_interface_ae0_unit_vlan_bp.interface_unit') }}">
-                    <i class="fa fa-gear"></i>Set Interface ae0 Unit
+                    <i class="fas fa-user-cog"></i>Set Interface ae0 Unit
                 </a>
             </li>
             <li>
                 <a href="{{ url_for('int_static_route_bp.set_static_route_page') }}" hidden>
-                    <i class="fa fa-gear"></i>Set Static Router
+                    <i class="fas fa-user-cog"></i>Set Static Router
                 </a>
             </li>
             <li>
                 <a href="{{ url_for('set_policy_whitelist_bp.set_policy_whitelist') }}">
-                    <i class="fa fa-gear"></i>Set Policy Whitelist
+                    <i class="fas fa-user-cog"></i>Set Policy Whitelist
                 </a>
-            </li>
             <li>
                 <a href="{{ url_for('int_dhcp_bp.set_access_address_assignment_page') }}" hidden>
-                    <i class="fa fa-gear"></i>Set Access Address
+                    <i class="fas fa-user-cog"></i>Set Access Address
                 </a>
-            </li>
-            <hr>
             <li>
                 <a href="{{ url_for('bgp_manager_bp.bgp_manager') }}">
-                    <i class="fa fa-gear"></i>BGP Manager
+                    <i class="fas fa-user-cog"></i>Set BGP Manager
                 </a>
             </li>
         </ul><!-- collapse -->
@@ -482,20 +480,32 @@
 
         <ul class="collapse show" id="OLTs"><!-- collapse -->
             <li>
-    <a href="{{ url_for('downstream_fec_bp.downstream_fec') }}">
-        <i class="fa fa-gear"></i>Downstream-fec
+                <a href="{{ url_for('get_mpls_brief_bp.get_mpls_brief') }}">
+                    <i class="fas fa-chalkboard-teacher"></i>Get mpls brief
+                </a>
+                  <hr>
+            <li>
+                <a href="{{ url_for('vlan_config_bp.vlan_config') }}">
+                    <i class="fas fa-user-cog"></i>Set dot1q vlan
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('mpls_l2vpn_bp.mpls_l2vpn') }}">
+                    <i class="fas fa-user-cog"></i>Set mpls vpls tunnel
+                </a>
+            </li>
+                <a href="{{ url_for('downstream_fec_bp.downstream_fec') }}">
+                    <i class="fas fa-user-cog"></i>Set downstream-fec
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('shutdown_gpon_bp.shutdown_gpon') }}">
+        <i class="fas fa-user-cog"></i>Set shutdown gpon
     </a>
-</li>
-<li>
-    <a href="{{ url_for('shutdown_gpon_bp.shutdown_gpon') }}">
-        <i class="fa fa-power-off"></i>Shutdown Gpon
-    </a>
-</li>
-<li>
-    <a href="{{ url_for('get_mpls_brief_bp.get_mpls_brief') }}">
-        <i class="fa fa-gear"></i>Get Mpls VPLS
-    </a>
-</li>
+    </li>
+
+
+
         </ul><!-- collapse -->
 
     </div><!-- sidenav -->
