@@ -4,6 +4,8 @@ from .auth import auth_bp
 from .dmos.downstream_fec import downstream_fec_bp
 from .dmos.shutdown_gpon import shutdown_gpon_bp  # Nova funcao
 from .dmos.get_mpls_brief import get_mpls_brief_bp
+from .dmos.vlan_config import vlan_config_bp
+from .dmos.mpls_l2vpn_tunnel import mpls_l2vpn_tunnel_bp  # NOVA LINHA
 
 from .junos.interface_dhcp import int_dhcp_bp
 from .junos.bgp_manager import bgp_manager_bp
@@ -20,7 +22,8 @@ def register_blueprints(app: Flask):
     app.register_blueprint(downstream_fec_bp, url_prefix='/network')
     app.register_blueprint(shutdown_gpon_bp, url_prefix='/network')  # nva funcao
     app.register_blueprint(get_mpls_brief_bp, url_prefix='/network')
-
+    app.register_blueprint(vlan_config_bp, url_prefix='/network')
+    app.register_blueprint(mpls_l2vpn_tunnel_bp, url_prefix='/network')  # NOVA LINHA
     app.register_blueprint(int_conf_bp, url_prefix='/network')
     app.register_blueprint(int_dhcp_bp, url_prefix='/network')
     app.register_blueprint(int_summary_bp, url_prefix='/network')
