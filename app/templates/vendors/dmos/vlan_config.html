@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Configurar VLAN em Switch</h1>
+
+<hr>
+
+<form method="POST" action="{{url_for('vlan_config_bp.vlan_config')}}" onsubmit="return mySubmitFunction()"
+    autocomplete="on">
+    {{ form.hidden_tag() }}
+
+    <div class="mb-3">
+        <label class="form-label fw-semibold">
+            <i class="fas fa-server me-2 text-primary"></i>Selecionar Switch
+        </label>
+        <div class="position-relative" id="searchable-select-wrapper-hostname">
+            {{ form.hostname(class="form-control searchable-select", id="hostname-select") }}
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-3">
+            <div class="form-floating">
+                {{ form.vlan_id(class="form-control") }}
+                {{ form.vlan_id.label }}
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="form-floating">
+                {{ form.description(class="form-control") }}
+                {{ form.description.label }}
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="form-floating">
+                {{ form.tagoruntag(class="form-control") }}
+                {{ form.tagoruntag.label }}
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <label class="form-label fw-semibold">
+                <i class="fas fa-th-list"></i> Interface link
+            </label>
+            <div class="position-relative" id="searchable-select-wrapper-port">
+                {{ form.port_dest(class="form-control searchable-select", id="port-select") }}
+            </div>
+        </div>
+    </div>
+
+    {{ form.submit(class="btn btn-primary") }}
+</form>
+
+<br>
+
+<small class="text-muted">dot1q vlan {{ form.vlan_id.data or '{vlan-id}' }} name {{ form.description.data or '{description}' }} interface {{ form.port_dest.data or '{interface}' }} {{ form.tagoruntag.data or '{tag}' }}</small>
+<pre class="border border-3 rounded-3 p-3">{{ output }}</pre>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Função para criar searchable select
+    function createSearchableSelect(selectElement, wrapperId, placeholder, noResultsText) {
+        if (!selectElement) return;
+
+        const container = document.createElement('div');
+        container.className = 'searchable-select-container';
+        container.style.position = 'relative';
+
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'form-control searchable-input';
+        searchInput.placeholder = placeholder;
+        searchInput.style.marginBottom = '5px';
+
+        const optionsList = document.createElement('div');
+        optionsList.className = 'searchable-options';
+        optionsList.style.cssText = `
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            background: white;
+            position: absolute;
+            width: 100%;
+            z-index: 1000;
+            display: none;
+        `;
+
+        // Botão de limpar seleção
+        const limparBtn = document.createElement('button');
+        limparBtn.type = 'button';
+        limparBtn.className = 'btn btn-outline-secondary mt-2';
+        limparBtn.textContent = 'Limpar seleção';
+
+        // Função para limpar seleção
+        function limparSelecao() {
+            selectElement.value = '';
+            searchInput.value = '';
+            optionsList.style.display = 'none';
+
+            const event = new Event('change', { bubbles: true });
+            selectElement.dispatchEvent(event);
+        }
+        limparBtn.addEventListener('click', limparSelecao);
+
+        const allOptions = Array.from(selectElement.options).slice(1);
+
+        function createOptionItem(option) {
+            const item = document.createElement('div');
+            item.className = 'searchable-option';
+            item.style.cssText = `
+                padding: 8px 12px;
+                cursor: pointer;
+                border-bottom: 1px solid #f0f0f0;
+            `;
+            item.textContent = option.text;
+            item.dataset.value = option.value;
+
+            item.addEventListener('mouseenter', function () {
+                this.style.backgroundColor = '#f8f9fa';
+            });
+
+            item.addEventListener('mouseleave', function () {
+                this.style.backgroundColor = 'white';
+            });
+
+            item.addEventListener('click', function () {
+                selectElement.value = this.dataset.value;
+                searchInput.value = this.textContent;
+                optionsList.style.display = 'none';
+
+                const event = new Event('change', { bubbles: true });
+                selectElement.dispatchEvent(event);
+            });
+
+            return item;
+        }
+
+        function filterOptions(searchTerm) {
+            optionsList.innerHTML = '';
+
+            const filteredOptions = allOptions.filter(option =>
+                option.text.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            if (filteredOptions.length === 0) {
+                const noResults = document.createElement('div');
+                noResults.style.cssText = 'padding: 8px 12px; color: #6c757d; font-style: italic;';
+                noResults.textContent = noResultsText;
+                optionsList.appendChild(noResults);
+            } else {
+                filteredOptions.forEach(option => {
+                    optionsList.appendChild(createOptionItem(option));
+                });
+            }
+        }
+
+        searchInput.addEventListener('input', function () {
+            const searchTerm = this.value;
+            filterOptions(searchTerm);
+            optionsList.style.display = searchTerm ? 'block' : 'none';
+        });
+
+        searchInput.addEventListener('focus', function () {
+            if (this.value) {
+                filterOptions(this.value);
+                optionsList.style.display = 'block';
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!container.contains(e.target)) {
+                optionsList.style.display = 'none';
+            }
+        });
+
+        if (selectElement.value) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            searchInput.value = selectedOption.text;
+        }
+
+        const wrapper = document.getElementById(wrapperId);
+        if (wrapper) {
+            wrapper.appendChild(container);
+            container.appendChild(searchInput);
+            container.appendChild(optionsList);
+            container.appendChild(limparBtn);
+        }
+
+        selectElement.style.display = 'none';
+
+        allOptions.forEach(option => {
+            optionsList.appendChild(createOptionItem(option));
+        });
+    }
+
+    // Aplicar searchable select para o campo Switch
+    const hostnameSelect = document.getElementById('hostname-select');
+    createSearchableSelect(
+        hostnameSelect, 
+        'searchable-select-wrapper-hostname', 
+        'Digite qual switch aplicar...', 
+        'Digite um switch válido'
+    );
+
+    // Aplicar searchable select para o campo Porta de Destino
+    const portSelect = document.getElementById('port-select');
+    createSearchableSelect(
+        portSelect, 
+        'searchable-select-wrapper-port', 
+        'Digite qual interface aplicar ...', 
+        'Digite uma interface válida'
+    );
+});
+</script>
+{% endblock %}
