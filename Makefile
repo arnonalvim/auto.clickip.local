@@ -22,7 +22,7 @@ venv:
 
 install: venv
 	@echo "Dependencies installed."
-	@$(PIP) install -r requirements.txt  --no-cache-dir > /dev/null
+	@$(PIP) install -r requirements.txt  --no-cache-dir # > /dev/null
 
 run: flake
 	@export PYTHONDONTWRITEBYTECODE=1 FLASK_APP=run.py && \
