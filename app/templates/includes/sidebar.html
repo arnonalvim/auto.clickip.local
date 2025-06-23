@@ -1,5 +1,4 @@
 <style>
-    /* ===== VARIÁVEIS ===== */
     :root {
         --sidebar-width: 16rem;
         --primary-bg: linear-gradient(180deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
@@ -14,14 +13,12 @@
         --shadow-color: rgba(0, 0, 0, 0.3);
     }
 
-    /* ===== BASE ===== */
     body {
         font-family: "Lato", sans-serif;
         margin: 0;
         overflow-x: hidden;
     }
 
-    /* ===== SIDEBAR PRINCIPAL ===== */
     .sidebar {
         height: 100vh;
         width: var(--sidebar-width);
@@ -43,7 +40,6 @@
         box-sizing: border-box;
     }
 
-    /* Custom scrollbar */
     .sidebar::-webkit-scrollbar {
         width: 4px;
     }
@@ -62,7 +58,6 @@
         background: linear-gradient(135deg, var(--accent-hover), #2cc5b3);
     }
 
-    /* ===== ÁREA DO USUÁRIO NO TOPO ===== */
     .sidebar .user-header {
         margin-bottom: 0.75rem;
         width: 100%;
@@ -154,7 +149,6 @@
         transform: scale(1.05);
     }
 
-    /* ===== NAVEGAÇÃO ===== */
     .sidenav {
         flex: 1;
         width: 100%;
@@ -205,6 +199,34 @@
         transform: scaleY(1);
     }
 
+    .sidenav > a.toggle-btn {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .sidenav > a.toggle-btn::after {
+        content: '▼';
+        font-size: 0.8rem;
+        color: var(--accent-color);
+        transition: all var(--transition-speed) ease;
+        transform-origin: center;
+    }
+
+    .sidenav > a.toggle-btn.collapsed::after {
+        transform: rotate(-90deg);
+    }
+
+    .sidenav > a.toggle-btn:hover::after {
+        color: var(--accent-hover);
+        transform: scale(1.2);
+    }
+
+    .sidenav > a.toggle-btn.collapsed:hover::after {
+        transform: rotate(-90deg) scale(1.2);
+    }
+
     .sidenav ul {
         list-style-type: none;
         padding: 0;
@@ -213,10 +235,27 @@
         padding-left: 0.75rem;
         width: calc(100% - 1.5rem);
         box-sizing: border-box;
+        max-height: 1000px;
+        overflow: hidden;
+        transition: all var(--transition-speed) ease;
+        opacity: 1;
+    }
+
+    .sidenav ul.collapsed {
+        max-height: 0;
+        margin: 0 0 0 0.75rem;
+        opacity: 0;
+        transform: translateY(-10px);
     }
 
     .sidenav ul li {
         margin: 0.2rem 0;
+        transition: all var(--transition-speed) ease;
+    }
+
+    .sidenav ul.collapsed li {
+        transform: translateX(-20px);
+        opacity: 0;
     }
 
     .sidenav ul a {
@@ -245,6 +284,31 @@
         box-shadow: 0 2px 8px rgba(64, 224, 208, 0.15);
     }
 
+    .sidenav ul a.active {
+        color: var(--accent-color) !important;
+        background: rgba(64, 224, 208, 0.15) !important;
+        border-color: var(--accent-color) !important;
+        transform: translateX(8px);
+        box-shadow: 0 3px 15px rgba(64, 224, 208, 0.3) !important;
+        font-weight: 600;
+    }
+
+    .sidenav ul a.active::before {
+        content: '';
+        position: absolute;
+        left: -1px;
+        top: 0;
+        height: 100%;
+        width: 3px;
+        background: var(--accent-color);
+        border-radius: 0 2px 2px 0;
+    }
+
+    .sidenav ul a.active i {
+        color: var(--accent-hover) !important;
+        filter: drop-shadow(0 0 5px var(--accent-color));
+    }
+
     .sidenav i {
         margin-right: var(--icon-spacing);
         width: 1rem;
@@ -259,7 +323,6 @@
         transform: scale(1.05);
     }
 
-    /* ===== SEÇÕES COLAPSÁVEIS ===== */
     #OLTs,
     #Routers,
     #Switches {
@@ -272,7 +335,6 @@
         box-sizing: border-box;
     }
 
-    /* ===== CONTROLES DA SIDEBAR ===== */
     .sidebar .closebtn {
         position: absolute;
         top: 0.75rem;
@@ -329,7 +391,6 @@
         box-shadow: 0 5px 15px rgba(64, 224, 208, 0.2);
     }
 
-    /* ===== ELEMENTOS GERAIS ===== */
     hr {
         border: none;
         height: 1px;
@@ -338,7 +399,6 @@
         opacity: 0.6;
     }
 
-    /* ===== ANIMAÇÕES ===== */
     @keyframes slideIn {
         from {
             transform: translateX(-100%);
@@ -354,7 +414,6 @@
         animation: slideIn 0.3s ease-out;
     }
 
-    /* ===== RESPONSIVIDADE ===== */
     @media (max-width: 1200px) {
         :root {
             --sidebar-width: 15rem;
@@ -391,8 +450,7 @@
     }
 </style>
 
-<aside id="mySidebar" class="sidebar"><!-- sidebar -->
-
+<aside id="mySidebar" class="sidebar">
     <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">
         &times;
     </a>
@@ -425,14 +483,14 @@
 
     <hr>
 
-    <div class="sidenav"><!-- sidenav -->
+    <div class="sidenav">
         <a href="/"><i class="fa fa-home"></i>Home</a>
 
-        <a href="#" data-bs-toggle="collapse" role="button">
-            <i class="fa fa-network-wired"></i> Juniper
-        </a><!-- toggle -->
+        <a href="#" class="toggle-btn collapsed" onclick="toggleSection('Routers', this)">
+            <span><i class="fa fa-network-wired"></i> Juniper</span>
+        </a>
 
-        <ul class="collapse show" id="Routers"><!-- collapse -->
+        <ul id="Routers" class="collapsed">
             <li>
                 <a href="{{ url_for('int_summary_bp.interface_summary') }}">
                     <i class="fas fa-chalkboard-teacher"></i>Get Summary
@@ -463,27 +521,30 @@
                 <a href="{{ url_for('set_policy_whitelist_bp.set_policy_whitelist') }}">
                     <i class="fas fa-user-cog"></i>Set Policy Whitelist
                 </a>
+            </li>
             <li>
                 <a href="{{ url_for('int_dhcp_bp.set_access_address_assignment_page') }}" hidden>
                     <i class="fas fa-user-cog"></i>Set Access Address
                 </a>
+            </li>
             <li>
                 <a href="{{ url_for('bgp_manager_bp.bgp_manager') }}">
                     <i class="fas fa-user-cog"></i>Set BGP Sessions
                 </a>
             </li>
-        </ul><!-- collapse -->
+        </ul>
 
-        <a href="#" data-bs-toggle="collapse" role="button">
-            <i class="fa fa-server"></i>DmOS
-        </a><!-- toggle -->
+        <a href="#" class="toggle-btn collapsed" onclick="toggleSection('OLTs', this)">
+            <span><i class="fa fa-server"></i>DmOS</span>
+        </a>
 
-        <ul class="collapse show" id="OLTs"><!-- collapse -->
+        <ul id="OLTs" class="collapsed">
             <li>
                 <a href="{{ url_for('get_mpls_brief_bp.get_mpls_brief') }}">
                     <i class="fas fa-chalkboard-teacher"></i>Get mpls brief
                 </a>
-                  <hr>
+            </li>
+            <hr>
             <li>
                 <a href="{{ url_for('vlan_config_bp.vlan_config') }}">
                     <i class="fas fa-user-cog"></i>Set dot1q vlan
@@ -494,22 +555,18 @@
                     <i class="fas fa-user-cog"></i>Set mpls vpls tunnel
                 </a>
             </li>
+            <li>
                 <a href="{{ url_for('downstream_fec_bp.downstream_fec') }}">
                     <i class="fas fa-user-cog"></i>Set downstream-fec
                 </a>
             </li>
             <li>
                 <a href="{{ url_for('shutdown_gpon_bp.shutdown_gpon') }}">
-        <i class="fas fa-user-cog"></i>Set shutdown gpon
-    </a>
-    </li>
-
-
-
-        </ul><!-- collapse -->
-
-    </div><!-- sidenav -->
-
+                    <i class="fas fa-user-cog"></i>Set shutdown gpon
+                </a>
+            </li>
+        </ul>
+    </div>
 </aside>
 
 <button id="main" class="openbtn" onclick="openNav()">☰</button>
@@ -521,5 +578,84 @@
 
     function closeNav() {
         document.getElementById("mySidebar").style.display = "none";
+    }
+
+    function toggleSection(sectionId, button) {
+        const section = document.getElementById(sectionId);
+        const isCollapsed = section.classList.contains('collapsed');
+        
+        if (isCollapsed) {
+            section.classList.remove('collapsed');
+            button.classList.remove('collapsed');
+            localStorage.setItem(`sidebar_${sectionId}`, 'expanded');
+        } else {
+            section.classList.add('collapsed');
+            button.classList.add('collapsed');
+            localStorage.setItem(`sidebar_${sectionId}`, 'collapsed');
+        }
+    }
+
+    function restoreSectionStates() {
+        const sections = ['Routers', 'OLTs'];
+        
+        sections.forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            const button = document.querySelector(`[onclick*="${sectionId}"]`);
+            const savedState = localStorage.getItem(`sidebar_${sectionId}`);
+            
+            if (section && button) {
+                if (savedState === 'expanded') {
+                    section.classList.remove('collapsed');
+                    button.classList.remove('collapsed');
+                } else {
+                    section.classList.add('collapsed');
+                    button.classList.add('collapsed');
+                }
+            }
+        });
+    }
+
+    function highlightActiveLink() {
+        const currentPath = window.location.pathname;
+        const allLinks = document.querySelectorAll('.sidenav a[href]');
+        
+        allLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('active');
+                localStorage.setItem('sidebar_active_link', currentPath);
+                
+                const parentUl = link.closest('ul');
+                if (parentUl && parentUl.classList.contains('collapsed')) {
+                    const sectionId = parentUl.id;
+                    const button = document.querySelector(`[onclick*="${sectionId}"]`);
+                    if (button) {
+                        parentUl.classList.remove('collapsed');
+                        button.classList.remove('collapsed');
+                        localStorage.setItem(`sidebar_${sectionId}`, 'expanded');
+                    }
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        restoreSectionStates();
+        
+        highlightActiveLink();
+        
+        const navLinks = document.querySelectorAll('.sidenav a[href]');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                localStorage.setItem('sidebar_active_link', this.getAttribute('href'));
+            });
+        });
+    });
+
+    function resetSidebarState() {
+        localStorage.removeItem('sidebar_Routers');
+        localStorage.removeItem('sidebar_OLTs');
+        localStorage.removeItem('sidebar_active_link');
+        location.reload();
     }
 </script>
