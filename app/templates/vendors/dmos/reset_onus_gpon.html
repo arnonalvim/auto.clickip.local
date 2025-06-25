@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Reiniciar ONUs em massa na porta GPON</h1>
+
+<hr>
+
+<form method="POST" action="{{url_for('reset_onus_gpon_bp.reset_onus_gpon')}}" onsubmit="return mySubmitFunction()"
+    autocomplete="on">
+    {{ form.hidden_tag() }}
+
+    <div class="mb-3">
+        <label class="form-label fw-semibold">
+            <i class="fas fa-server me-2 text-primary"></i>Selecionar OLT
+        </label>
+        <div class="position-relative" id="searchable-select-wrapper">
+            {{ form.hostname(class="form-control searchable-select") }}
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-2">
+            <div class="form-floating">
+                {{ form.chassis(class="form-control") }}
+                {{ form.chassis.label }}
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="form-floating">
+                {{ form.slot(class="form-control") }}
+                {{ form.slot.label }}
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="form-floating">
+                {{ form.port_id(class="form-control") }}
+                {{ form.port_id.label }}
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-warning" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Atenção:</strong> Esta operação irá reiniciar todas as ONUs (0 a 127) da porta GPON selecionada! 
+        O processo pode levar alguns minutos para ser concluído, lembre-se de informar o SAC.
+    </div>
+
+    {{ form.submit(class="btn btn-danger") }}
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectElement = document.querySelector('.searchable-select');
+
+    if (selectElement) {
+        const container = document.createElement('div');
+        container.className = 'searchable-select-container';
+        container.style.position = 'relative';
+
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'form-control searchable-input';
+        searchInput.placeholder = 'Escreva aqui para filtrar OLTs...';
+        searchInput.style.marginBottom = '5px';
+
+        const optionsList = document.createElement('div');
+        optionsList.className = 'searchable-options';
+        optionsList.style.cssText = `
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            background: white;
+            position: absolute;
+            width: 100%;
+            z-index: 1000;
+            display: none;
+        `;
+
+        // Botão de limpar seleção
+        const limparBtn = document.createElement('button');
+        limparBtn.type = 'button';
+        limparBtn.className = 'btn btn-outline-secondary mt-2';
+        limparBtn.textContent = 'Limpar seleção';
+
+        // Função para limpar seleção
+        function limparSelecao() {
+            selectElement.value = '';
+            searchInput.value = '';
+            optionsList.style.display = 'none';
+
+            const event = new Event('change', { bubbles: true });
+            selectElement.dispatchEvent(event);
+        }
+        limparBtn.addEventListener('click', limparSelecao);
+
+        const allOptions = Array.from(selectElement.options).slice(1);
+
+        function createOptionItem(option) {
+            const item = document.createElement('div');
+            item.className = 'searchable-option';
+            item.style.cssText = `
+                padding: 8px 12px;
+                cursor: pointer;
+                border-bottom: 1px solid #f0f0f0;
+            `;
+            item.textContent = option.text;
+            item.dataset.value = option.value;
+
+            item.addEventListener('mouseenter', function () {
+                this.style.backgroundColor = '#f8f9fa';
+            });
+
+            item.addEventListener('mouseleave', function () {
+                this.style.backgroundColor = 'white';
+            });
+
+            item.addEventListener('click', function () {
+                selectElement.value = this.dataset.value;
+                searchInput.value = this.textContent;
+                optionsList.style.display = 'none';
+
+                const event = new Event('change', { bubbles: true });
+                selectElement.dispatchEvent(event);
+            });
+
+            return item;
+        }
+
+        function filterOptions(searchTerm) {
+            optionsList.innerHTML = '';
+
+            const filteredOptions = allOptions.filter(option =>
+                option.text.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            if (filteredOptions.length === 0) {
+                const noResults = document.createElement('div');
+                noResults.style.cssText = 'padding: 8px 12px; color: #6c757d; font-style: italic;';
+                noResults.textContent = 'Nenhuma OLT encontrada';
+                optionsList.appendChild(noResults);
+            } else {
+                filteredOptions.forEach(option => {
+                    optionsList.appendChild(createOptionItem(option));
+                });
+            }
+        }
+
+        searchInput.addEventListener('input', function () {
+            const searchTerm = this.value;
+            filterOptions(searchTerm);
+            optionsList.style.display = searchTerm ? 'block' : 'none';
+        });
+
+        searchInput.addEventListener('focus', function () {
+            if (this.value) {
+                filterOptions(this.value);
+                optionsList.style.display = 'block';
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!container.contains(e.target)) {
+                optionsList.style.display = 'none';
+            }
+        });
+
+        if (selectElement.value) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            searchInput.value = selectedOption.text;
+        }
+
+        const wrapper = document.getElementById('searchable-select-wrapper');
+        if (wrapper) {
+            wrapper.appendChild(container);
+            container.appendChild(searchInput);
+            container.appendChild(optionsList);
+            container.appendChild(limparBtn);
+        }
+
+        selectElement.style.display = 'none';
+
+        allOptions.forEach(option => {
+            optionsList.appendChild(createOptionItem(option));
+        });
+    }
+});
+</script>
+{% endblock %}
