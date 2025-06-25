@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+/* Home page specific styles */
+.hero-section {
+    text-align: center;
+    margin-bottom: 4rem;
+    padding: 3rem 2rem;
+    background: linear-gradient(135deg, rgba(64, 224, 208, 0.1) 0%, rgba(79, 70, 229, 0.05) 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(64, 224, 208, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #40E0D0, #4f46e5, #ec4899, #40E0D0);
+    background-size: 300% 100%;
+    animation: gradient-shift 4s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+    0%, 100% { background-position: 0% 0%; }
+    50% { background-position: 100% 0%; }
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #40E0D0 0%, #4f46e5 50%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+}
+
+.hero-subtitle {
+    font-size: 1.3rem;
+    color: #64748b;
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+}
+
+.hero-description {
+    font-size: 1.1rem;
+    color: #475569;
+    max-width: 700px;
+    margin: 0 auto 2rem;
+    line-height: 1.7;
+}
+
+.quick-stats {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #40E0D0;
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.platforms-section {
+    margin: 4rem 0;
+}
+
+.section-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 3rem;
+    color: #1e293b;
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, #40E0D0, #4f46e5);
+    border-radius: 2px;
+}
+
+.platforms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.platform-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 2.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.platform-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+.platform-card:hover::before {
+    transform: translateX(100%);
+}
+
+.platform-card:hover {
+    transform: translateY(-8px);
+    border-color: #40E0D0;
+    box-shadow: 0 20px 40px rgba(64, 224, 208, 0.15);
+}
+
+.platform-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    background: linear-gradient(135deg, #40E0D0, #36d3bb);
+    box-shadow: 0 8px 16px rgba(64, 224, 208, 0.2);
+}
+
+.platform-card.juniper .platform-icon {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+}
+
+.platform-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #1e293b;
+}
+
+.platform-description {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.platform-features {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+}
+
+.platform-features li {
+    padding: 0.5rem 0;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.platform-features li i {
+    color: #10b981;
+    margin-right: 0.5rem;
+}
+
+.platform-button {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: #40E0D0;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.platform-button:hover {
+    background: #36d3bb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(64, 224, 208, 0.2);
+}
+
+.platform-card.juniper .platform-button {
+    background: #4f46e5;
+}
+
+.platform-card.juniper .platform-button:hover {
+    background: #4338ca;
+}
+
+.getting-started {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 20px;
+    padding: 3rem;
+    text-align: center;
+    border: 1px solid #cbd5e1;
+}
+
+.getting-started h3 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #1e293b;
+}
+
+.getting-started p {
+    color: #64748b;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.step-item {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    background: #40E0D0;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin: 0 auto 1rem;
+}
+
+.step-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #1e293b;
+}
+
+.step-description {
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .quick-stats {
+        gap: 2rem;
+    }
+    
+    .platforms-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .platform-card {
+        padding: 2rem;
+    }
+    
+    .getting-started {
+        padding: 2rem;
+    }
+    
+    .steps-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <h1 class="hero-title">AUTOCLICKIP</h1>
+    <p class="hero-subtitle">Plataforma Avançada de Automação de Rede</p>
+    <p class="hero-description">
+        Simplifique e automatize suas configurações de rede com nossa plataforma intuitiva. 
+        Gerencie equipamentos Juniper e DmOS através de comandos SSH seguros e validados, 
+        com interface moderna e controle total sobre sua infraestrutura.
+    </p>
+    
+    <div class="quick-stats">
+        <div class="stat-item">
+            <span class="stat-number">2</span>
+            <span class="stat-label">Plataformas</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">15+</span>
+            <span class="stat-label">Funcionalidades</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">100%</span>
+            <span class="stat-label">Seguro</span>
+        </div>
+    </div>
+</div>
+
+<!-- Platforms Section -->
+<div class="platforms-section">
+    <h2 class="section-title">Plataformas Suportadas</h2>
+    
+    <div class="platforms-grid">
+        <!-- Juniper Card -->
+        <div class="platform-card juniper">
+            <div class="platform-icon">
+                <i class="fa fa-network-wired"></i>
+            </div>
+            <h3 class="platform-title">Juniper Networks</h3>
+            <p class="platform-description">
+                Automatize configurações em roteadores e switches Juniper com JunOS. 
+                Execute comandos seguros e obtenha informações detalhadas dos equipamentos.
+            </p>
+            <ul class="platform-features">
+                <li><i class="fas fa-check"></i> Interface Configuration</li>
+                <li><i class="fas fa-check"></i> BGP Management</li>
+                <li><i class="fas fa-check"></i> Policy Configuration</li>
+                <li><i class="fas fa-check"></i> Static Routes</li>
+            </ul>
+            <a href="#" class="platform-button" onclick="expandJuniperSection()">
+                <i class="fas fa-arrow-right"></i> Explorar Juniper
+            </a>
+        </div>
+
+        <!-- DmOS Card -->
+        <div class="platform-card">
+            <div class="platform-icon">
+                <i class="fa fa-server"></i>
+            </div>
+            <h3 class="platform-title">DmOS (Datacom)</h3>
+            <p class="platform-description">
+                Gerencie OLTs Datacom com sistema DmOS. Configure GPON, MPLS, VLANs 
+                e execute operações massivas em ONUs com facilidade e segurança.
+            </p>
+            <ul class="platform-features">
+                <li><i class="fas fa-check"></i> GPON Management</li>
+                <li><i class="fas fa-check"></i> MPLS Configuration</li>
+                <li><i class="fas fa-check"></i> VLAN Setup</li>
+                <li><i class="fas fa-check"></i> ONU Reset em Massa</li>
+            </ul>
+            <a href="#" class="platform-button" onclick="expandDmOSSection()">
+                <i class="fas fa-arrow-right"></i> Explorar DmOS
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Getting Started Section -->
+<div class="getting-started">
+    <h3>Como Começar</h3>
+    <p>Siga estes passos simples para começar a automatizar sua rede</p>
+    
+    <div class="steps-grid">
+        <div class="step-item">
+            <div class="step-number">1</div>
+            <div class="step-title">Faça Login</div>
+            <div class="step-description">
+                Acesse sua conta com credenciais seguras e criptografadas
+            </div>
+        </div>
+        
+        <div class="step-item">
+            <div class="step-number">2</div>
+            <div class="step-title">Escolha a Plataforma</div>
+            <div class="step-description">
+                Selecione entre Juniper ou DmOS no menu lateral
+            </div>
+        </div>
+        
+        <div class="step-item">
+            <div class="step-number">3</div>
+            <div class="step-title">Configure Equipamentos</div>
+            <div class="step-description">
+                Execute comandos automatizados com validação completa
+            </div>
+        </div>
+        
+        <div class="step-item">
+            <div class="step-number">4</div>
+            <div class="step-title">Monitore Resultados</div>
+            <div class="step-description">
+                Acompanhe o feedback em tempo real das operações
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function expandJuniperSection() {
+    // Abrir seção Juniper na sidebar
+    const juniperSection = document.getElementById('Routers');
+    const juniperButton = document.querySelector('[onclick*="Routers"]');
+    
+    if (juniperSection && juniperButton) {
+        juniperSection.classList.remove('collapsed');
+        juniperButton.classList.remove('collapsed');
+        localStorage.setItem('sidebar_Routers', 'expanded');
+    }
+    
+    // Scroll suave para o topo
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function expandDmOSSection() {
+    // Abrir seção DmOS na sidebar
+    const dmosSection = document.getElementById('OLTs');
+    const dmosButton = document.querySelector('[onclick*="OLTs"]');
+    
+    if (dmosSection && dmosButton) {
+        dmosSection.classList.remove('collapsed');
+        dmosButton.classList.remove('collapsed');
+        localStorage.setItem('sidebar_OLTs', 'expanded');
+    }
+    
+    // Scroll suave para o topo
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Animação de entrada dos elementos
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.platform-card, .step-item');
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    });
+    
+    cards.forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(card);
+    });
+});
+</script>
+
+{% endblock content %}

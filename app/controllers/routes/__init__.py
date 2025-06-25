@@ -1,5 +1,6 @@
 from flask import Flask
 from .auth import auth_bp
+from .home import home_bp
 
 from .dmos.downstream_fec import downstream_fec_bp
 from .dmos.shutdown_gpon import shutdown_gpon_bp
@@ -19,6 +20,7 @@ from .junos.set_interface_ae0_unit_vlan import set_interface_ae0_unit_vlan_bp
 
 def register_blueprints(app: Flask):
     app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(home_bp)
 
     app.register_blueprint(downstream_fec_bp, url_prefix='/network')
     app.register_blueprint(shutdown_gpon_bp, url_prefix='/network')
