@@ -19,7 +19,7 @@ def dot1q_vlan_id(hostname, username, password, vlan, description):
     commands = [
         'config',
         f'dot1q vlan {vlan} name {description} interface ten-gigabit-ethernet-1/1/1 ; top',
-        f'commit and-quit label "dot1q" comment "add vlan {vlan} via netmiko"',
+        f'commit and-quit label "dot1q" comment "add vlan {vlan} via auto.clickip.local"',
         'show dot1q vlan',
     ]
 

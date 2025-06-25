@@ -54,7 +54,7 @@ def interface_unit():
             ipv6_48=inet_48,
         )
 
-        flash('Command sent successfully!', category='success')
+        flash('Comando enviado!', category='success')
 
     else:
         if form.errors:

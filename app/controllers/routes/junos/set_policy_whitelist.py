@@ -34,7 +34,7 @@ def set_policy_whitelist():
             prefix=form.prefix_address.data
         )
 
-        flash('Command sent successfully!', category='success')
+        flash('Comando enviado!', category='success')
 
     else:
         if form.errors:
@@ -67,7 +67,7 @@ def get_policy_whitelist():
             current_user_decrypted_password,
         )
 
-        flash('Command sent successfully!', category='success')
+        flash('Comando enviado!', category='success')
 
     else:
         if form.errors:

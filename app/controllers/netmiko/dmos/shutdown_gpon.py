@@ -19,8 +19,8 @@ def execute_shutdown_gpon(hostname, username, password, chassis, slot, port_id, 
     commands = [
         'config',
         f'interface gpon {chassis}/{slot}/{port_id} ; {dmos_command}',
-        'commit and-quit label netmiko comment "commit via netmiko automation" | suppress-validate-warning-prompt',
-        f'show interface gpon {chassis}/{slot}/{port_id}',
+        'commit and-quit label site comment "auto.clickip.local" | suppress-validate-warning-prompt',
+        'show config comm chan 0',
     ]
 
     try:

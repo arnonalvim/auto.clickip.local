@@ -7,101 +7,150 @@
 
 <style>
   body {
-    background: #23272f;
-    color: #f7f7fa;
+    background: #f8fafc;
+    color: #1e293b;
     font-family: 'Segoe UI', Arial, sans-serif;
     margin: 0;
     padding: 0;
   }
+
   .navbar {
-    background: #181b21;
-    padding: 14px 32px;
+    background: white;
+    padding: 20px 30px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid #31343b;
-    margin-bottom: 32px;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
+
   .navbar-title {
-    font-size: 1.5em;
+    font-size: 1.4em;
     font-weight: 600;
-    color: #61dafb;
-    letter-spacing: 2px;
+    color: #40E0D0;
     display: flex;
     align-items: center;
   }
+
   .navbar-title i {
-    margin-right: 12px;
-    color: #04eb3d;
+    margin-right: 10px;
+    color: #40E0D0;
   }
+
   .nav-user {
-    color: #bdbdbd;
+    color: #64748b;
+    font-weight: 500;
   }
+
+  .nav-user i {
+    margin-right: 8px;
+    color: #40E0D0;
+  }
+
   .panel-content {
-    background-color: #272b34;
+    background: white;
     margin: 0 auto;
     max-width: 500px;
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-    padding: 36px 42px;
-    margin-bottom: 48px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 40px;
+    border: 1px solid #e2e8f0;
   }
+
   .headline {
-    color: #dfdfdf;
-    font-size: 1.25em;
+    color: #1e293b;
+    font-size: 1.3em;
     font-weight: 600;
-    margin-bottom: 20px;
-    letter-spacing: 1px;
+    margin-bottom: 25px;
     display: flex;
     align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e2e8f0;
   }
+
   .headline i {
-    color: #6fcf97;
-    margin-right: 8px;
+    color: #40E0D0;
+    margin-right: 10px;
   }
-  .desc, .auth-info, .not-auth {
-    color: #a0aec0;
-    margin-bottom: 30px;
+
+  .desc, .auth-info {
+    color: #475569;
+    margin-bottom: 25px;
     line-height: 1.6;
   }
+
   .not-auth {
-    color: #ff6565;
-    background: rgba(65,0,0,0.09);
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
     border-radius: 8px;
-    padding: 16px;
+    padding: 20px;
     text-align: center;
-    margin-bottom: 30px;
-    font-weight: bold;
-    font-size: 1.1em;
-    border: 1px solid #ff8585;
+    margin-bottom: 25px;
+    font-weight: 500;
   }
+
+  .not-auth i {
+    margin-right: 8px;
+  }
+
+  .user-info {
+    background: #ecfdf5;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 15px;
+    color: #065f46;
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+
+  .user-info i {
+    color: #10b981;
+    margin-right: 8px;
+  }
+
+  .auth-info {
+    background: #f0f9ff;
+    border-left: 4px solid #40E0D0;
+    padding: 15px;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 30px;
+  }
+
+  .auth-info strong {
+    color: #40E0D0;
+  }
+
   .btn-back {
     display: inline-block;
-    margin-top: 8px;
-    padding: 10px 22px;
+    padding: 12px 24px;
     border-radius: 8px;
-    background: linear-gradient(90deg, #576574 0%, #374151 100%);
-    color: #ececec;
+    background: #40E0D0;
+    color: white;
     font-weight: 500;
     text-decoration: none;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
     border: none;
-    outline: none;
     cursor: pointer;
   }
+
   .btn-back:hover {
-    background: linear-gradient(90deg, #61dafb 0%, #253341 100%);
-    color: #151721;
+    background: #36d3bb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(64, 224, 208, 0.2);
   }
-  .user-info {
-    color: #ffd86b;
-    margin-bottom: 15px;
-    font-size: 1.1em;
+
+  .btn-back i {
+    margin-right: 8px;
   }
 </style>
 
 <div class="navbar">
-    <span class="navbar-title"><i class="fas fa-user-shield"></i> </span>
+    <span class="navbar-title">
+        <i class="fas fa-user-shield"></i> 
+        Painel Administrativo
+    </span>
     <span class="nav-user">
         {% if current_user.is_authenticated %}
             <i class="fas fa-user"></i> {{ current_user.username }}
@@ -110,24 +159,31 @@
 </div>
 
 <div class="panel-content">
-    <div class="headline"><i class="fas fa-lock"></i> Painel do administrador</div>
+    <div class="headline">
+        <i class="fas fa-cog"></i> 
+        Área Administrativa
+    </div>
+    
     {% if current_user.is_authenticated %}
         <div class="user-info">
             <i class="fas fa-user-check"></i>
-            {{ current_user.username }}
+            Usuário: {{ current_user.username }}
         </div>
         <div class="auth-info">
-            <b>Informação de autenticação:</b><br>
-            Usuário atual está <strong>autenticado</strong>.
+            <strong>Status:</strong> Autenticado.<br>
+            Contate o administrador do sistema para alterações importantes.
         </div>
     {% else %}
         <div class="not-auth">
-            <i class="fas fa-exclamation-circle"></i>
-            Usuário não autenticado
+            <i class="fas fa-exclamation-triangle"></i>
+            Acesso negado - Usuário não autenticado
         </div>
     {% endif %}
 
-    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar</a>
+    <a href="javascript:history.back()" class="btn-back">
+        <i class="fas fa-arrow-left"></i> 
+        Voltar
+    </a>
 </div>
 
 {% endblock body %}

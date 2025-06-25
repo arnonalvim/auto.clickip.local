@@ -1,30 +1,269 @@
 {% with messages = get_flashed_messages(with_categories=True) %}
 {% for category, message in messages %}
 
-<div id="flash-messages" class="toast text-bg-{{category}} show position-fixed" role="alert"
-    style="top: 1rem; right: 1rem; opacity: 0.7; z-index: 1;">
-    <div class="d-flex justify-content-between align-items-center p-3">
-        <div class="toast-body">
-            <p class="m-auto">{{ message }}</p>
+<div id="flash-messages-{{ loop.index }}" class="custom-toast show position-fixed flash-{{ category }}" role="alert">
+    <div class="toast-content">
+        <div class="toast-icon">
+            {% if category == 'success' %}
+                <i class="fas fa-check-circle"></i>
+            {% elif category == 'danger' %}
+                <i class="fas fa-exclamation-triangle"></i>
+            {% elif category == 'warning' %}
+                <i class="fas fa-exclamation-circle"></i>
+            {% elif category == 'info' %}
+                <i class="fas fa-info-circle"></i>
+            {% else %}
+                <i class="fas fa-bell"></i>
+            {% endif %}
         </div>
-        <button type="button" class="btn-close me-3" data-bs-dismiss="toast"></button>
+        <div class="toast-message">
+            {{ message }}
+        </div>
+        <button type="button" class="toast-close" onclick="closeToast('flash-messages-{{ loop.index }}')">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
 </div>
 
 {% endfor %}
 {% endwith %}
 
+<style>
+.custom-toast {
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+    min-width: 350px;
+    max-width: 450px;
+    margin-bottom: 0.5rem;
+    background: rgba(17, 24, 39, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(64, 224, 208, 0.15);
+    border-radius: 12px;
+    box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(64, 224, 208, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    animation: slideInRight 0.4s ease-out;
+    transition: all 0.3s ease;
+}
+
+.custom-toast:hover {
+    transform: translateX(-5px);
+    box-shadow: 
+        0 20px 45px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(64, 224, 208, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    gap: 0.75rem;
+}
+
+.toast-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.toast-message {
+    flex: 1;
+    color: #f8fafc;
+    font-weight: 500;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.toast-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toast-close:hover {
+    background: rgba(75, 85, 99, 0.3);
+    color: #f8fafc;
+    transform: scale(1.1);
+}
+
+/* Category-specific styles */
+.flash-success {
+    border-left: 4px solid #10b981;
+}
+
+.flash-success .toast-icon {
+    color: #10b981;
+    text-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.flash-danger {
+    border-left: 4px solid #ef4444;
+}
+
+.flash-danger .toast-icon {
+    color: #ef4444;
+    text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+.flash-warning {
+    border-left: 4px solid #f59e0b;
+}
+
+.flash-warning .toast-icon {
+    color: #f59e0b;
+    text-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
+
+.flash-info {
+    border-left: 4px solid #40E0D0;
+}
+
+.flash-info .toast-icon {
+    color: #40E0D0;
+    text-shadow: 0 0 8px rgba(64, 224, 208, 0.3);
+}
+
+/* Animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.toast-fade-out {
+    animation: slideOutRight 0.4s ease-in forwards;
+}
+
+/* Multiple toasts stacking */
+.custom-toast:nth-child(1) { top: 1rem; }
+.custom-toast:nth-child(2) { top: 5rem; }
+.custom-toast:nth-child(3) { top: 9rem; }
+.custom-toast:nth-child(4) { top: 13rem; }
+.custom-toast:nth-child(5) { top: 17rem; }
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .custom-toast {
+        left: 1rem;
+        right: 1rem;
+        min-width: auto;
+        max-width: none;
+    }
+    
+    .toast-content {
+        padding: 0.875rem 1rem;
+    }
+    
+    .toast-message {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .custom-toast {
+        left: 0.5rem;
+        right: 0.5rem;
+    }
+    
+    .toast-content {
+        padding: 0.75rem;
+        gap: 0.5rem;
+    }
+}
+
+/* Dark scrollbar for consistency */
+.custom-toast::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-toast::-webkit-scrollbar-track {
+    background: rgba(31, 41, 55, 0.3);
+}
+
+.custom-toast::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #40E0D0, #36d3bb);
+    border-radius: 2px;
+}
+</style>
+
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        setTimeout(function () {
-            var flashMessages = document.getElementById("flash-messages");
-            if (flashMessages) {
-                flashMessages.style.transition = "opacity 0.5s ease-out";
-                flashMessages.style.opacity = "0";
-                setTimeout(function () {
-                    flashMessages.remove();
-                }, 500);
-            }
-        }, 5000);
+function closeToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+        toast.classList.add('toast-fade-out');
+        setTimeout(() => {
+            toast.remove();
+            // Reposition remaining toasts
+            repositionToasts();
+        }, 400);
+    }
+}
+
+function repositionToasts() {
+    const toasts = document.querySelectorAll('.custom-toast');
+    toasts.forEach((toast, index) => {
+        toast.style.top = (1 + (index * 4)) + 'rem';
     });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Auto-close toasts after 6 seconds
+    const toasts = document.querySelectorAll('.custom-toast');
+    toasts.forEach((toast, index) => {
+        setTimeout(() => {
+            if (toast && toast.parentNode) {
+                toast.classList.add('toast-fade-out');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                        repositionToasts();
+                    }
+                }, 400);
+            }
+        }, 6000 + (index * 200)); // Stagger the auto-close timing
+    });
+});
+
+// Close toast when clicking outside (optional)
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.custom-toast')) {
+        // Optional: uncomment to close all toasts when clicking outside
+        // const toasts = document.querySelectorAll('.custom-toast');
+        // toasts.forEach(toast => closeToast(toast.id));
+    }
+});
 </script>
