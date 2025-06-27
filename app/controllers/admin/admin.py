@@ -169,7 +169,7 @@ class LogoutLink(MenuLink):
 
 class AppLink(MenuLink):
     def get_url(self):
-        return url_for('int_summary_bp.interface_summary')
+        return url_for('home_bp.home')
 
 
 class UploadsFileAdmin(FileAdmin):

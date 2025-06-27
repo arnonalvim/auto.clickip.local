@@ -1,6 +1,6 @@
 from flask_admin import Admin
 from flask_migrate import Migrate
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, redirect, url_for
 from sqlalchemy.orm import DeclarativeBase
@@ -48,9 +48,12 @@ def create_app():
     with app.app_context():
         db.create_all()  # Creates all tables in the database if they do not exist
 
-    # Basic route for the home page
+    # Basic route for the home page - redirects to login if not authenticated
     @app.route('/')
     def page_home():
-        return redirect(url_for('int_summary_bp.interface_summary'))  # Redirects to the network interface summary page
+        # Check if user is authenticated
+        if not current_user.is_authenticated:
+            return redirect(url_for('auth_bp.login'))  # Redirects to login page
+        return redirect(url_for('home_bp.home'))  # Redirects to the home page if authenticated
 
     return app  # Returns the configured Flask application instance

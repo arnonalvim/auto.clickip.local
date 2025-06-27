@@ -38,7 +38,7 @@ def login():
         if username_recorder and check_password(username_recorder.password, form.password.data):
             login_user(username_recorder, remember=form.checkbox.data)
             flash(f'Bem vindo, {form.username.data}', category='success')
-            return redirect(url_for('int_summary_bp.interface_summary'))
+            return redirect(url_for('home_bp.home'))
 
         else:
             flash('Usuário ou senha inválidos', category='danger')
