@@ -4,6 +4,7 @@ from .auth import auth_bp
 from .home import home_bp
 from .dmos.downstream_fec import downstream_fec_bp
 from .dmos.shutdown_gpon import shutdown_gpon_bp
+from .dmos.set_commands_massive import set_commands_massive_bp
 from .dmos.reset_onus_gpon import reset_onus_gpon_bp
 from .dmos.get_mpls_brief import get_mpls_brief_bp
 from .dmos.vlan_config import vlan_config_bp
@@ -22,6 +23,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(home_bp)
     app.register_blueprint(downstream_fec_bp, url_prefix='/network')
     app.register_blueprint(shutdown_gpon_bp, url_prefix='/network')
+    app.register_blueprint(set_commands_massive_bp, url_prefix='/network')
     app.register_blueprint(reset_onus_gpon_bp, url_prefix='/network')
     app.register_blueprint(get_mpls_brief_bp, url_prefix='/network')
     app.register_blueprint(vlan_config_bp, url_prefix='/network')

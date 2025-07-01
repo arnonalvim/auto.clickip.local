@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Executar comandos em massa</h1>
+<p class="text-muted">Selecione uma ou mais OLTs e digite os comandos que deseja executar em todas elas.</p>
+
+<hr>
+
+<form method="POST" action="{{url_for('set_commands_massive_bp.set_commands_massive')}}" autocomplete="on">
+    {{ form.hidden_tag() }}
+
+    <div class="mb-4">
+        <label class="form-label fw-semibold">
+            <i class="fas fa-server me-2 text-primary"></i>Selecionar OLTs
+        </label>
+        <p class="text-muted small">Marque as OLTs onde deseja executar os comandos:</p>
+        
+        <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto; background-color: #f8f9fa;">
+            <div class="row">
+                {% for subfield in form.hostnames %}
+                <div class="col-md-6 col-lg-4 mb-2">
+                    <div class="form-check">
+                        {{ subfield(class="form-check-input") }}
+                        {{ subfield.label(class="form-check-label") }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="mt-2">
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectAllOLTs()">Selecionar Todas</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="deselectAllOLTs()">Desmarcar Todas</button>
+            <span class="ms-3 text-muted" id="selectedCount">0 OLTs selecionadas</span>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label fw-semibold">
+            <i class="fas fa-terminal me-2 text-primary"></i>{{ form.commands.label }}
+        </label>
+        <p class="text-muted small">Digite os comandos que deseja executar (um por linha):</p>
+        {{ form.commands(class="form-control font-monospace") }}
+    </div>
+
+    {{ form.submit(class="btn btn-primary btn-lg", onclick="return confirmSubmit()") }}
+</form>
+
+{% if results %}
+<hr class="my-4">
+
+<div class="mb-3">
+    <h3>Resultados da Execução</h3>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card text-white bg-info">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total</h5>
+                    <h2>{{ total_olts }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Sucesso</h5>
+                    <h2>{{ successful_olts }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-danger">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Falhas</h5>
+                    <h2>{{ failed_olts }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="accordion" id="resultsAccordion">
+    {% for result in results %}
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="heading{{ loop.index }}">
+            <button class="accordion-button collapsed d-flex align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}">
+                {% if result.success %}
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                {% else %}
+                    <i class="fas fa-times-circle text-danger me-2"></i>
+                {% endif %}
+                <strong>{{ result.hostname }}</strong>
+                <span class="text-muted ms-2">({{ result.ip }})</span>
+                {% if not result.success %}
+                    <span class="badge bg-danger ms-auto me-2">ERRO</span>
+                {% endif %}
+            </button>
+        </h2>
+        <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#resultsAccordion">
+            <div class="accordion-body">
+                {% if result.error %}
+                    <div class="alert alert-danger">
+                        <strong>Erro:</strong> {{ result.error }}
+                    </div>
+                {% endif %}
+                <pre class="border border-3 rounded-3 p-3 bg-dark text-light" style="max-height: 500px; overflow-y: auto;"><code>{{ result.output }}</code></pre>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endif %}
+
+<script>
+function selectAllOLTs() {
+    const checkboxes = document.querySelectorAll('input[name="hostnames"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateSelectedCount();
+}
+
+function deselectAllOLTs() {
+    const checkboxes = document.querySelectorAll('input[name="hostnames"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('input[name="hostnames"]:checked');
+    const count = checkboxes.length;
+    const countElement = document.getElementById('selectedCount');
+    countElement.textContent = `${count} OLT${count !== 1 ? 's' : ''} selecionada${count !== 1 ? 's' : ''}`;
+}
+
+function confirmSubmit() {
+    const selectedCheckboxes = document.querySelectorAll('input[name="hostnames"]:checked');
+    const commandsField = document.querySelector('textarea[name="commands"]');
+    
+    console.log('Selected checkboxes:', selectedCheckboxes.length);
+    console.log('Commands:', commandsField.value.trim());
+    
+    if (selectedCheckboxes.length === 0) {
+        alert('Por favor, selecione pelo menos uma OLT.');
+        return false;
+    }
+    
+    if (!commandsField.value.trim()) {
+        alert('Por favor, digite pelo menos um comando.');
+        return false;
+    }
+    
+    return confirm(`Você está prestes a executar comandos em ${selectedCheckboxes.length} OLT(s). Tem certeza?`);
+}
+
+// Atualiza o contador quando as caixinhas são clicadas
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('input[name="hostnames"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+    updateSelectedCount(); // Contagem inicial
+});
+</script>
+{% endblock %}
