@@ -44,10 +44,10 @@ def set_commands_massive():
         if form.validate_on_submit():
             selected_hostnames = form.hostnames.data
             commands = form.commands.data
-            
+
             # Filtra apenas IPs válidos
             selected_hostnames = [ip for ip in selected_hostnames if ip]
-            
+
             if not selected_hostnames:
                 flash('Por favor, selecione pelo menos uma OLT.', category='danger')
                 return render_template(
@@ -58,7 +58,7 @@ def set_commands_massive():
                     successful_olts=successful_olts,
                     failed_olts=failed_olts
                 )
-            
+
             if not commands or not commands.strip():
                 flash('Por favor, digite pelo menos um comando.', category='danger')
                 return render_template(
@@ -69,33 +69,33 @@ def set_commands_massive():
                     successful_olts=successful_olts,
                     failed_olts=failed_olts
                 )
-            
+
             # Converte IPs selecionados para (ip, hostname)
             hosts_dict = {host.ip_address: host.hostname for host in db.session.execute(db.select(Olts)).scalars()}
             hostnames_data = [(ip, hosts_dict.get(ip, ip)) for ip in selected_hostnames if ip in hosts_dict]
-            
+
             total_olts = len(hostnames_data)
-            
+
             if hostnames_data:
                 flash(f'Executando comandos em {total_olts} OLT(s)...', category='info')
-                
+
                 results = execute_commands_massive(
                     hostnames_data=hostnames_data,
                     username=current_user.username,
                     password=current_user_decrypted_password,
                     commands=commands
                 )
-                
+
                 # Conta sucessos e falhas
                 successful_olts = sum(1 for r in results if r.get('success', False))
                 failed_olts = total_olts - successful_olts
-                
+
                 if successful_olts > 0:
                     flash(f'Comandos executados com sucesso em {successful_olts} OLT(s)!', category='success')
-                
+
                 if failed_olts > 0:
                     flash(f'Falha na execução em {failed_olts} OLT(s). Verifique os detalhes abaixo.', category='warning')
-            
+
             else:
                 flash('Nenhuma OLT válida foi selecionada.', category='danger')
 
