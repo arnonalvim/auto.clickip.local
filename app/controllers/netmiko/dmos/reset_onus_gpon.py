@@ -277,11 +277,11 @@ onu-reset onu 127
 yes
 top
 exit
-show interface gpon {chassis}/{slot}/{port_id} onu"""
+"""
 
     try:
         ssh = ConnectHandler(**device)
-        output = ssh.send_command_timing(reset_commands, read_timeout=60)
+        output = ssh.send_command_timing(reset_commands, read_timeout=5)
         final_output = [
             ssh.find_prompt(),
             output

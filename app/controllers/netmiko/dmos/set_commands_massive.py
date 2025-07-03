@@ -6,12 +6,11 @@ import threading
 
 load_dotenv()
 
-# Thread-local será como um armazenamento local de thread
 thread_local = threading.local()
 
 
 def execute_commands_on_single_olt(hostname, hostname_display, username, password, commands_list):
-    """Executa comandos em uma única OLT"""
+    """Executa comandos em uma única OLT - VERSÃO CORRIGIDA"""
     device = {
         'device_type': 'cisco_ios',
         'host': hostname,
@@ -32,23 +31,17 @@ def execute_commands_on_single_olt(hostname, hostname_display, username, passwor
 
     try:
         ssh = ConnectHandler(**device)
-        output_lines = [f"=== Conectado em {hostname_display} ({hostname}) ===\n"]
 
-        for command in commands_list:
-            if command.strip():  # Ignora linhas vazias
-                try:
-                    prompt = ssh.find_prompt()
-                    command_output = ssh.send_command(command.strip(), expect_string=r'#', read_timeout=30)
+        # Converte a lista de comandos em uma string única
+        commands_string = '\n'.join(commands_list)
 
-                    output_lines.append(f"{prompt} {command.strip()}")
-                    output_lines.append(command_output)
-                    output_lines.append("-" * 50)
+        # Envia todos os comandos de uma vez
+        output = ssh.send_command_timing(commands_string, read_timeout=60)
 
-                except Exception as cmd_error:
-                    output_lines.append(f"ERRO ao executar '{command.strip()}': {str(cmd_error)}")
-                    output_lines.append("-" * 50)
-
-        result['output'] = '\n'.join(output_lines)
+        # Formata a saída
+        prompt = ssh.find_prompt()
+        final_output = f"=== Conectado em {hostname_display} ({hostname}) ===\n\n{prompt}\n{output}"
+        result['output'] = final_output
         result['success'] = True
 
     except Exception as e:
@@ -57,7 +50,8 @@ def execute_commands_on_single_olt(hostname, hostname_display, username, passwor
 
     finally:
         try:
-            ssh.disconnect()
+            if 'ssh' in locals():
+                ssh.disconnect()
         except Exception:
             pass
 
@@ -67,17 +61,7 @@ def execute_commands_on_single_olt(hostname, hostname_display, username, passwor
 def execute_commands_massive(hostnames_data, username, password, commands):
     """
     Executa comandos em múltiplas OLTs em paralelo
-
-    Args:
-        hostnames_data: Lista de tuplas (ip, hostname_display)
-        username: Nome de usuário
-        password: Senha
-        commands: String com comandos separados por quebra de linha
-
-    Returns:
-        Lista de resultados para cada OLT
     """
-    # Separa os comandos por linha
     commands_list = [cmd.strip() for cmd in commands.split('\n') if cmd.strip()]
 
     if not commands_list:
@@ -85,9 +69,7 @@ def execute_commands_massive(hostnames_data, username, password, commands):
 
     results = []
 
-    # Executa em paralelo com ThreadPoolExecutor
     with ThreadPoolExecutor(max_workers=5) as executor:
-        # Executa as tarefas
         future_to_host = {
             executor.submit(
                 execute_commands_on_single_olt,
@@ -100,7 +82,6 @@ def execute_commands_massive(hostnames_data, username, password, commands):
             for ip, hostname_display in hostnames_data
         }
 
-        # Coleta os resultados conforme completam
         for future in as_completed(future_to_host):
             ip, hostname_display = future_to_host[future]
             try:
@@ -115,7 +96,5 @@ def execute_commands_massive(hostnames_data, username, password, commands):
                     'error': str(exc)
                 })
 
-    # Ordena os resultados por hostname para consistência, assim o usuário vê equiapmento que deu erro e qual não deu
     results.sort(key=lambda x: x['hostname'])
-
     return results
