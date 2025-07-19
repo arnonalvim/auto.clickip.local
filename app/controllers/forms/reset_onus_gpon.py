@@ -1,13 +1,13 @@
 from flask_wtf import FlaskForm
-from wtforms import SelectField, SubmitField
+from wtforms import SelectMultipleField, SelectField, SubmitField
 from wtforms.validators import DataRequired
 
 
 class Reset_onus_gpon_form(FlaskForm):
-    hostname = SelectField(
-        '',
+    hostname = SelectMultipleField(
+        'OLTs',
         choices=[],
-        validators=[DataRequired(message='Por favor, selecione uma OLT')]
+        validators=[DataRequired(message='Por favor, selecione pelo menos uma OLT')]
     )
 
     chassis = SelectField(
@@ -18,9 +18,10 @@ class Reset_onus_gpon_form(FlaskForm):
         'slot', choices=[(str(i), str(i)) for i in range(1, 3)]
     )
 
-    port_id = SelectField(
+    port_id = SelectMultipleField(
         'gpon',
-        choices=[(str(i), str(i)) for i in range(1, 33)]
+        choices=[(str(i), str(i)) for i in range(1, 33)],
+        validators=[DataRequired(message='Por favor, selecione pelo menos uma porta GPON')]
     )
 
     submit = SubmitField('Executar Reset ONUs')

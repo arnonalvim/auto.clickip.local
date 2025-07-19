@@ -5,17 +5,17 @@
 
 <hr>
 
-<form method="POST" action="{{url_for('reset_onus_gpon_bp.reset_onus_gpon')}}" onsubmit="return mySubmitFunction()"
-    autocomplete="on">
+<form id="resetForm" autocomplete="on">
     {{ form.hidden_tag() }}
 
     <div class="mb-3">
         <label class="form-label fw-semibold">
-            <i class="fas fa-server me-2 text-primary"></i>Selecionar OLT
+            <i class="fas fa-server me-2 text-primary"></i>Selecionar OLTs
         </label>
         <div class="position-relative" id="searchable-select-wrapper">
-            {{ form.hostname(class="form-control searchable-select") }}
+            {{ form.hostname(class="form-control searchable-select", multiple=true) }}
         </div>
+        <small class="form-text text-muted">Segure Ctrl para selecionar múltiplas OLTs</small>
     </div>
 
     <div class="row g-3 mb-3">
@@ -31,27 +31,146 @@
                 {{ form.slot.label }}
             </div>
         </div>
-        <div class="col-2">
-            <div class="form-floating">
-                {{ form.port_id(class="form-control") }}
-                {{ form.port_id.label }}
-            </div>
+        <div class="col-4">
+            <label class="form-label fw-semibold">Portas GPON</label>
+            {{ form.port_id(class="form-control", multiple=true, size="6") }}
+            <small class="form-text text-muted">Segure Ctrl para selecionar múltiplas portas</small>
         </div>
     </div>
 
     <div class="alert alert-warning" role="alert">
         <i class="fas fa-exclamation-triangle me-2"></i>
-        <strong>Atenção:</strong> Esta operação irá reiniciar todas as ONUs (0 a 127) da porta GPON selecionada! 
-        O processo pode levar alguns minutos para ser concluído, lembre-se de informar o SAC.
+        <strong>Atenção:</strong> Não é recomendado fazer em mais de uma porta gpon! Esta operação irá reiniciar todas as ONUs (0 a 127) das portas GPON selecionadas! 
+        O processo pode levar 20 minutos para cada porta, lembre-se de informar o SAC.
     </div>
 
-    {{ form.submit(class="btn btn-danger") }}
+    {{ form.submit(class="btn btn-danger", id="submitBtn") }}
 </form>
+
+<div id="progressCard" class="card mt-4" style="display: none;">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-cog fa-spin me-2"></i>
+                Executando Reset de ONUs
+            </h5>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-light me-2" id="minimizeBtn">
+                    <i class="fas fa-window-minimize"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-light" id="closeBtn" disabled>
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Progresso Geral</label>
+            <div class="progress mb-2" style="height: 25px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                     role="progressbar" 
+                     style="width: 0%" 
+                     id="progressBar">
+                    <span id="progressPercentage">0%</span>
+                </div>
+            </div>
+            <small class="text-muted" id="progressDetails">0 de 0 tarefas concluídas</small>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Status Atual</label>
+            <div class="alert alert-info mb-0" id="currentStatus">
+                <i class="fas fa-info-circle me-2"></i>
+                <span id="progressText">Iniciando...</span>
+            </div>
+        </div>
+
+        <div id="resultsContainer" style="display: none;">
+            <label class="form-label fw-semibold">Resultados</label>
+            <div id="resultsList" style="max-height: 300px; overflow-y: auto;"></div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-3">
+            <div>
+                <small class="text-muted">
+                    <i class="fas fa-clock me-1"></i>
+                    Tempo estimado: <span id="estimatedTime">Calculando...</span>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+    <div id="progressToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" style="display: none;">
+        <div class="toast-header">
+            <i class="fas fa-cog fa-spin me-2 text-primary"></i>
+            <strong class="me-auto">Reset ONUs</strong>
+            <button type="button" class="btn-close" onclick="showProgressCard()"></button>
+        </div>
+        <div class="toast-body">
+            <div class="progress mb-2" style="height: 10px;">
+                <div class="progress-bar" id="toastProgressBar" style="width: 0%"></div>
+            </div>
+            <small id="toastProgressText">Processando...</small>
+        </div>
+    </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const selectElement = document.querySelector('.searchable-select');
+    const form = document.getElementById('resetForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressCard = document.getElementById('progressCard');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercentage = document.getElementById('progressPercentage');
+    const progressDetails = document.getElementById('progressDetails');
+    const progressText = document.getElementById('progressText');
+    const currentStatus = document.getElementById('currentStatus');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const resultsList = document.getElementById('resultsList');
+    const closeBtn = document.getElementById('closeBtn');
+    const minimizeBtn = document.getElementById('minimizeBtn');
+    const progressToast = document.getElementById('progressToast');
+    const toastProgressBar = document.getElementById('toastProgressBar');
+    const toastProgressText = document.getElementById('toastProgressText');
+    const estimatedTime = document.getElementById('estimatedTime');
 
+    let currentTaskId = null;
+    let startTime = null;
+    let isMinimized = false;
+    let monitoringInterval = null;
+
+    // Função para limpar tudo
+    function cleanup() {
+        if (monitoringInterval) {
+            clearInterval(monitoringInterval);
+            monitoringInterval = null;
+        }
+        submitBtn.disabled = false;
+        progressCard.style.display = 'none';
+        progressToast.style.display = 'none';
+        isMinimized = false;
+        
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    }
+
+    // Função para mostrar progresso
+    window.showProgressCard = function() {
+        isMinimized = false;
+        progressToast.style.display = 'none';
+        progressCard.style.display = 'block';
+        progressCard.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // select pesquisável para OLTs
+    const selectElement = document.querySelector('.searchable-select');
+    
     if (selectElement) {
         const container = document.createElement('div');
         container.className = 'searchable-select-container';
@@ -62,6 +181,16 @@ document.addEventListener('DOMContentLoaded', function () {
         searchInput.className = 'form-control searchable-input';
         searchInput.placeholder = 'Escreva aqui para filtrar OLTs...';
         searchInput.style.marginBottom = '5px';
+
+        const selectedItemsContainer = document.createElement('div');
+        selectedItemsContainer.className = 'selected-items mb-2';
+        selectedItemsContainer.style.cssText = `
+            min-height: 40px;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 8px;
+            background: #f8f9fa;
+        `;
 
         const optionsList = document.createElement('div');
         optionsList.className = 'searchable-options';
@@ -77,24 +206,52 @@ document.addEventListener('DOMContentLoaded', function () {
             display: none;
         `;
 
-        // Botão de limpar seleção
         const limparBtn = document.createElement('button');
         limparBtn.type = 'button';
         limparBtn.className = 'btn btn-outline-secondary mt-2';
         limparBtn.textContent = 'Limpar seleção';
 
-        // Função para limpar seleção
-        function limparSelecao() {
-            selectElement.value = '';
-            searchInput.value = '';
-            optionsList.style.display = 'none';
+        const allOptions = Array.from(selectElement.options);
+        let selectedValues = [];
 
-            const event = new Event('change', { bubbles: true });
-            selectElement.dispatchEvent(event);
+        function updateSelectedItems() {
+            selectedItemsContainer.innerHTML = '';
+            
+            if (selectedValues.length === 0) {
+                selectedItemsContainer.innerHTML = '<span class="text-muted">Nenhuma OLT selecionada</span>';
+                return;
+            }
+
+            selectedValues.forEach(value => {
+                const option = allOptions.find(opt => opt.value === value);
+                if (option) {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge bg-primary me-2 mb-1';
+                    badge.innerHTML = `${option.text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.7em;" onclick="removeSelection('${value}')"></button>`;
+                    selectedItemsContainer.appendChild(badge);
+                }
+            });
         }
-        limparBtn.addEventListener('click', limparSelecao);
 
-        const allOptions = Array.from(selectElement.options).slice(1);
+        window.removeSelection = function(value) {
+            selectedValues = selectedValues.filter(v => v !== value);
+            updateSelectedValues();
+        };
+
+        function updateSelectedValues() {
+            Array.from(selectElement.options).forEach(option => {
+                option.selected = false;
+            });
+            
+            selectedValues.forEach(value => {
+                const option = Array.from(selectElement.options).find(opt => opt.value === value);
+                if (option) {
+                    option.selected = true;
+                }
+            });
+            
+            updateSelectedItems();
+        }
 
         function createOptionItem(option) {
             const item = document.createElement('div');
@@ -103,25 +260,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 padding: 8px 12px;
                 cursor: pointer;
                 border-bottom: 1px solid #f0f0f0;
+                ${selectedValues.includes(option.value) ? 'background-color: #e3f2fd;' : ''}
             `;
-            item.textContent = option.text;
-            item.dataset.value = option.value;
-
-            item.addEventListener('mouseenter', function () {
-                this.style.backgroundColor = '#f8f9fa';
-            });
-
-            item.addEventListener('mouseleave', function () {
-                this.style.backgroundColor = 'white';
-            });
-
-            item.addEventListener('click', function () {
-                selectElement.value = this.dataset.value;
-                searchInput.value = this.textContent;
-                optionsList.style.display = 'none';
-
-                const event = new Event('change', { bubbles: true });
-                selectElement.dispatchEvent(event);
+            
+            item.innerHTML = `
+                <input type="checkbox" ${selectedValues.includes(option.value) ? 'checked' : ''} style="margin-right: 8px;">
+                ${option.text}
+            `;
+            
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                
+                if (selectedValues.includes(option.value)) {
+                    selectedValues = selectedValues.filter(v => v !== option.value);
+                    checkbox.checked = false;
+                    this.style.backgroundColor = 'white';
+                } else {
+                    selectedValues.push(option.value);
+                    checkbox.checked = true;
+                    this.style.backgroundColor = '#e3f2fd';
+                }
+                
+                updateSelectedValues();
             });
 
             return item;
@@ -131,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function () {
             optionsList.innerHTML = '';
 
             const filteredOptions = allOptions.filter(option =>
-                option.text.toLowerCase().includes(searchTerm.toLowerCase())
+                option.text.toLowerCase().includes(searchTerm.toLowerCase()) && option.value !== ''
             );
 
             if (filteredOptions.length === 0) {
@@ -149,14 +310,12 @@ document.addEventListener('DOMContentLoaded', function () {
         searchInput.addEventListener('input', function () {
             const searchTerm = this.value;
             filterOptions(searchTerm);
-            optionsList.style.display = searchTerm ? 'block' : 'none';
+            optionsList.style.display = 'block';
         });
 
         searchInput.addEventListener('focus', function () {
-            if (this.value) {
-                filterOptions(this.value);
-                optionsList.style.display = 'block';
-            }
+            filterOptions(this.value);
+            optionsList.style.display = 'block';
         });
 
         document.addEventListener('click', function (e) {
@@ -165,25 +324,249 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        if (selectElement.value) {
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-            searchInput.value = selectedOption.text;
-        }
+        limparBtn.addEventListener('click', function() {
+            selectedValues = [];
+            searchInput.value = '';
+            updateSelectedValues();
+            optionsList.style.display = 'none';
+        });
 
         const wrapper = document.getElementById('searchable-select-wrapper');
         if (wrapper) {
             wrapper.appendChild(container);
+            container.appendChild(selectedItemsContainer);
             container.appendChild(searchInput);
             container.appendChild(optionsList);
             container.appendChild(limparBtn);
         }
 
         selectElement.style.display = 'none';
+        updateSelectedItems();
+    }
 
-        allOptions.forEach(option => {
-            optionsList.appendChild(createOptionItem(option));
+    // Calcular tempo estimado (ainda em testes)
+    function calculateEstimatedTime(completed, total, startTime) {
+        if (completed === 0) return 'Calculando...';
+        
+        const elapsed = (Date.now() - startTime) / 1000;
+        const rate = completed / elapsed;
+        const remaining = total - completed;
+        const estimatedSeconds = remaining / rate;
+        
+        if (estimatedSeconds < 60) {
+            return `${Math.round(estimatedSeconds)}s`;
+        } else if (estimatedSeconds < 3600) {
+            return `${Math.round(estimatedSeconds / 60)}min`;
+        } else {
+            const hours = Math.floor(estimatedSeconds / 3600);
+            const minutes = Math.round((estimatedSeconds % 3600) / 60);
+            return `${hours}h ${minutes}min`;
+        }
+    }
+
+    closeBtn.addEventListener('click', cleanup);
+
+    minimizeBtn.addEventListener('click', function() {
+        isMinimized = true;
+        progressCard.style.display = 'none';
+        progressToast.style.display = 'block';
+    });
+
+    // formulário
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const hostnames = formData.getAll('hostname');
+        const portIds = formData.getAll('port_id');
+        const chassis = formData.get('chassis');
+        const slot = formData.get('slot');
+
+        if (hostnames.length === 0) {
+            alert('Por favor, selecione pelo menos uma OLT');
+            return;
+        }
+
+        if (portIds.length === 0) {
+            alert('Por favor, selecione pelo menos uma porta GPON');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        progressBar.style.width = '0%';
+        progressPercentage.textContent = '0%';
+        progressDetails.textContent = '0 de 0 tarefas concluídas';
+        progressText.textContent = 'Iniciando...';
+        currentStatus.className = 'alert alert-info mb-0';
+        resultsContainer.style.display = 'none';
+        resultsList.innerHTML = '';
+        closeBtn.disabled = true;
+        estimatedTime.textContent = 'Calculando...';
+        
+        startTime = Date.now();
+        isMinimized = false;
+        progressCard.style.display = 'block';
+        progressCard.scrollIntoView({ behavior: 'smooth' });
+
+        fetch("{{ url_for('reset_onus_gpon_bp.reset_onus_gpon') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+            },
+            body: JSON.stringify({
+                hostnames: hostnames,
+                port_ids: portIds,
+                chassis: chassis,
+                slot: slot
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentTaskId = data.task_id;
+                monitorTask(data.task_id);
+            } else {
+                alert('Erro ao iniciar o reset: ' + data.message);
+                cleanup();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao enviar requisição');
+            cleanup();
+        });
+    });
+
+    function monitorTask(taskId) {
+        if (monitoringInterval) {
+            clearInterval(monitoringInterval);
+        }
+
+        monitoringInterval = setInterval(() => {
+            fetch(`{{ url_for('reset_onus_gpon_bp.get_task_status', task_id='TASK_ID') }}`.replace('TASK_ID', taskId))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'running') {
+                        const progress = Math.round((data.completed / data.total) * 100);
+                        
+                        progressBar.style.width = progress + '%';
+                        progressPercentage.textContent = progress + '%';
+                        progressDetails.textContent = `${data.completed} de ${data.total} tarefas concluídas`;
+                        progressText.textContent = data.current_operation || 'Processando...';
+                        
+                        if (startTime && data.completed > 0) {
+                            estimatedTime.textContent = calculateEstimatedTime(data.completed, data.total, startTime);
+                        }
+                        
+                        if (isMinimized) {
+                            toastProgressBar.style.width = progress + '%';
+                            toastProgressText.textContent = `${progress}% - ${data.current_operation}`;
+                        }
+                        
+                        if (data.results && data.results.length > 0) {
+                            updateResultsList(data.results);
+                        }
+                        
+                    } else if (data.status === 'completed') {
+                        clearInterval(monitoringInterval);
+                        monitoringInterval = null;
+                        
+                        progressBar.style.width = '100%';
+                        progressPercentage.textContent = '100%';
+                        progressDetails.textContent = `${data.total} de ${data.total} tarefas concluídas`;
+                        progressText.textContent = 'Processo concluído com sucesso!';
+                        currentStatus.className = 'alert alert-success mb-0';
+                        estimatedTime.textContent = 'Concluído';
+                        
+                        if (data.results) {
+                            updateResultsList(data.results);
+                            resultsContainer.style.display = 'block';
+                        }
+                        
+                        if (isMinimized) {
+                            toastProgressBar.style.width = '100%';
+                            toastProgressText.textContent = 'Processo concluído!';
+                        }
+                        
+                        closeBtn.disabled = false;
+                        closeBtn.innerHTML = '<i class="fas fa-check me-1"></i> Concluir';
+                        closeBtn.className = 'btn btn-sm btn-success';
+                        submitBtn.disabled = false;
+                        
+                        setTimeout(() => {
+                            if (currentTaskId) {
+                                fetch(`{{ url_for('reset_onus_gpon_bp.clear_task_status', task_id='TASK_ID') }}`.replace('TASK_ID', currentTaskId))
+                                    .catch(error => console.log('Erro ao limpar tarefa:', error));
+                            }
+                        }, 300000);
+                        
+                    } else if (data.status === 'error') {
+                        clearInterval(monitoringInterval);
+                        monitoringInterval = null;
+                        
+                        progressText.textContent = 'Erro: ' + (data.error || 'Erro desconhecido');
+                        currentStatus.className = 'alert alert-danger mb-0';
+                        estimatedTime.textContent = 'Erro';
+                        
+                        if (isMinimized) {
+                            toastProgressText.textContent = 'Erro no processamento';
+                        }
+                        
+                        closeBtn.disabled = false;
+                        closeBtn.innerHTML = '<i class="fas fa-times me-1"></i> Fechar';
+                        closeBtn.className = 'btn btn-sm btn-danger';
+                        submitBtn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error monitoring task:', error);
+                    clearInterval(monitoringInterval);
+                    monitoringInterval = null;
+                    closeBtn.disabled = false;
+                    submitBtn.disabled = false;
+                });
+        }, 1000);
+    }
+
+    function updateResultsList(results) {
+        resultsList.innerHTML = '';
+        
+        const successCount = results.filter(r => r.success).length;
+        const errorCount = results.length - successCount;
+        
+        const summary = document.createElement('div');
+        summary.className = 'alert alert-info mb-3';
+        summary.innerHTML = `
+            <strong>Resumo:</strong> 
+            <span class="badge bg-success me-2">${successCount} sucessos</span>
+            <span class="badge bg-danger">${errorCount} erros</span>
+        `;
+        resultsList.appendChild(summary);
+        
+        results.forEach(result => {
+            const resultItem = document.createElement('div');
+            resultItem.className = `alert ${result.success ? 'alert-success' : 'alert-danger'} py-2 mb-2`;
+            resultItem.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${result.hostname}</strong> - Porta ${result.port}
+                    </div>
+                    <div>
+                        ${result.success ? 
+                            '<i class="fas fa-check-circle text-success"></i> Sucesso' : 
+                            '<i class="fas fa-times-circle text-danger"></i> Erro'
+                        }
+                    </div>
+                </div>
+                ${!result.success && result.error ? `<small class="text-muted mt-1 d-block">Erro: ${result.error}</small>` : ''}
+            `;
+            resultsList.appendChild(resultItem);
         });
     }
+
+    // Limpeza ao sair da página
+    window.addEventListener('beforeunload', cleanup);
 });
 </script>
 {% endblock %}
