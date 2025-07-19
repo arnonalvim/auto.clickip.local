@@ -17,6 +17,7 @@ from .junos.get_interface_ae0_summary import int_summary_bp
 from .junos.interface_static_router import int_static_route_bp
 from .junos.set_policy_whitelist import set_policy_whitelist_bp
 from .junos.set_interface_ae0_unit_vlan import set_interface_ae0_unit_vlan_bp
+from .junos.set_clear_pppoe_session import set_clear_pppoe_session_bp
 
 
 def register_blueprints(app: Flask):
@@ -37,3 +38,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(int_static_route_bp, url_prefix='/network')
     app.register_blueprint(set_policy_whitelist_bp, url_prefix='/network')
     app.register_blueprint(set_interface_ae0_unit_vlan_bp, url_prefix='/network')
+    app.register_blueprint(set_clear_pppoe_session_bp, url_prefix='/network')

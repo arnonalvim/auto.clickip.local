@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Limpar Sessão PPPoE</h1>
+
+<hr />
+
+<form action="{{url_for('set_clear_pppoe_session_bp.clear_pppoe_session')}}" method="POST"
+  onsubmit="return mySubmitFunction()" autocomplete="on">
+
+  {{ form.hidden_tag() }}
+
+  <div class="row mb-3">
+    <div class="col">
+      <div class="form-floating">
+        {{ form.hostname(class="form-control") }}
+        {{ form.hostname.label }}
+      </div>
+    </div>
+  </div>
+  <!-- hostname -->
+
+  <div class="row mb-3">
+    <div class="col">
+      <div class="form-floating">
+        {{ form.user_name(class="form-control") }}
+        {{ form.user_name.label }}
+      </div>
+    </div>
+    <div class="col-auto">
+      {{ form.submit(class="btn btn-primary") }}
+    </div>
+  </div>
+  <!-- user_name and execute button -->
+
+  <div class="alert alert-warning" role="alert">
+    <i class="fas fa-exclamation-triangle"></i>
+    <strong>Lembre-se de consultar o LOGIN de autenticação ***correto*** do cliente no Hubsoft</strong>
+  </div>
+  <!-- warning message -->
+
+  <div class="d-flex justify-content-end">
+    <button type="reset" class="btn btn-danger">Reset</button>
+  </div>
+  <!-- reset button -->
+
+</form>
+
+<br>
+
+{% if output %}
+<div class="card">
+  <div class="card-header">
+    <h5>Resultado da Execução</h5>
+  </div>
+  <div class="card-body">
+    <pre class="border border-3 rounded-3 p-3">{{ output }}</pre>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -2,68 +2,177 @@
 
 {% block content %}
 <style>
+    body {
+        background: #f5f7fb;
+    }
+
     .hero-section {
         text-align: center;
-        padding: 1rem;
-        background: linear-gradient(200deg, hsl(171, 85%, 41%) 0%, #b45a00 100%);
-        border-radius: 20px;
-        border: 3px solid #060f8d;
-        color: #ffffff;
+        padding: 2.5rem 1rem 2rem 1rem;
+        background: linear-gradient(110deg, #11bfae 20%, #2247ad 100%);
+        border-radius: 24px;
+        border: 3px solid #055e92;
+        color: #fff;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 4px 24px rgba(0,26,56,0.11);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-section::after {
+        content: '';
+        position: absolute;
+        right: -60px;
+        top: -60px;
+        width: 180px;
+        height: 180px;
+        background: rgba(255,255,255,0.07);
+        border-radius: 50%;
+        filter: blur(2px);
     }
 
     .hero-title {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin-bottom: 1rem;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-size: 3rem;
+        font-weight: 900;
+        margin-bottom: .6rem;
+        text-shadow: 0 3px 16px rgba(15, 62, 130, 0.21);
+        letter-spacing: 1px;
+    }
+
+    .hero-section p {
+        font-size: 1.43rem;
+        margin: 0 0 1rem 0;
+        font-weight: 400;
+        opacity: .92;
     }
 
     .platforms-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(288px, 1fr));
         gap: 2rem;
-        margin: 2rem 0;
+        margin: 0 auto 2.4rem auto;
+        max-width: 850px;
     }
 
     .platform-card {
-        background: #ffffff;
-        border: 1px solid #00000090;
-        border-radius: 16px;
-        padding: 2rem;
+        background: #fff;
+        border: none;
+        border-radius: 18px;
+        padding: 2.7rem 1.7rem 2rem 1.7rem;
         text-align: center;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 18px rgba(36,74,183,0.11);
+        transition: transform 0.18s cubic-bezier(.4,2,.6,1), box-shadow 0.2s;
+        position: relative;
+    }
+
+    .platform-card:hover {
+        transform: translateY(-8px) scale(1.025);
+        box-shadow: 0 7px 22px rgba(36, 74, 183, 0.21);
+    }
+
+    .platform-icon {
+        font-size: 2.8rem;
+        margin-bottom: 1rem;
+        color: #11bfae;
     }
 
     .platform-card h3 {
-        color: #000000;
+        color: #2247ad;
+        font-size: 1.4rem;
+        margin-bottom: .55rem;
+        font-weight: 800;
+    }
+
+    .platform-card p {
+        color: #212a39;
+        font-size: 1.07rem;
+        opacity: .96;
+        margin: 0 0 10px 0;
+    }
+
+    .start-section {
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 2px 12px rgba(36,74,183,0.08);
+        padding: 2rem 2.2rem 1.2rem 2.2rem;
+        max-width: 650px;
+        margin: 0 auto 2.6rem auto;
+    }
+
+    .start-section h3 {
+        color: #2247ad;
+        font-size: 1.2rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        margin-top: 0;
+    }
+
+    .doc-link-btn {
+        display: inline-block;
+        margin: 0.5rem 0 1.5rem 0;
+        padding: 0.55em 1.43em;
+        background: linear-gradient(110deg, #11bfae 40%, #2247ad 100%);
+        color: #fff !important;
+        font-weight: 600;
+        border-radius: 8px;
+        box-shadow: 0 1px 8px rgba(36,74,183,0.14);
+        text-decoration: none;
+        transition: background .2s;
+    }
+
+    .doc-link-btn:hover {
+        background: linear-gradient(110deg, #2247ad 0%, #11bfae 100%);
+        color: #fff !important;
+        text-decoration: none;
+    }
+
+    ol {
+        margin: 0 0 0 1.2rem;
+        padding: 0;
+        color: #334169;
+        font-size: 1.05rem;
+    }
+
+    ol li {
+        margin-bottom: .55rem;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+        .hero-title { font-size: 2.1rem; }
+        .platform-card { padding: 1.2rem .6rem; }
+        .start-section { padding: 1.2rem .6rem;}
     }
 </style>
 
 <div class="hero-section">
     <h1 class="hero-title">AUTOCLICKIP</h1>
-    <p>Plataforma de Automação de Rede</p>
+    <p>Plataforma de Automação de Rede Inteligente e Eficiente</p>
 </div>
 
 <div class="platforms-grid">
     <div class="platform-card">
+        <div class="platform-icon">🛡️</div>
         <h3>Juniper Networks</h3>
         <p>Automatize configurações em roteadores Juniper com JunOS.</p>
     </div>
     <div class="platform-card">
+        <div class="platform-icon">🔌</div>
         <h3>DmOS (Datacom)</h3>
         <p>Automatize configurações em OLTs e switches Datacom com sistema DmOS.</p>
     </div>
 </div>
 
-<div>
-    <h3>Como Começar</h3>
-    <p>Siga estes passos simples para começar a automatizar sua rede, <a href="https://docs.google.com/document/d/1hJYUeWCeNn9w-JKjtv3k206IGN45Bb_C" >clique aqui para ler a documentação</a></p>
+<div class="start-section">
+    <h3>Como Começar 🚀</h3>
+    <a class="doc-link-btn" href="https://docs.google.com/document/d/1hJYUeWCeNn9w-JKjtv3k206IGN45Bb_C" >
+        📖 Clique aqui para ler a documentação
+    </a>
     <ol>
-        <li>Faça login após cadastro usando seu tacacs</li>
+        <li>Faça login após cadastro usando seu TACACS</li>
         <li>Escolha a plataforma no menu lateral esquerdo</li>
-        <li>Configure Equipamentos</li>
-        <li>Monitore Resultados</li>
+        <li>Configure os equipamentos desejados</li>
+        <li>Monitore os resultados diretamente pelo portal</li>
     </ol>
 </div>
-
 {% endblock content %}
