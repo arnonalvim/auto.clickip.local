@@ -13,7 +13,7 @@ class SetClearPppoeSessionForm(FlaskForm):
         'Nome do Usuário',
         validators=[
             DataRequired(),
-            Length(min=1, max=100, message="O nome do usuário deve ter entre 1 e 100 caracteres")
+            Length(min=1, max=15, message="O nome do usuário deve ter entre 1 e 15 caracteres")
         ],
         render_kw={"placeholder": "Digite o nome do usuário PPPoE"}
     )

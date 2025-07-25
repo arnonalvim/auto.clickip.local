@@ -5,7 +5,6 @@ from netmiko import ConnectHandler
 load_dotenv()
 
 
-# Retrieves the interface summary from a Juniper device
 def get_interface_ae0_summary(hostname, username, password):
     router = {
         'device_type': 'juniper',

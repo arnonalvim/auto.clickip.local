@@ -29,7 +29,7 @@ def clear_pppoe_session(hostname, username, password, user_name):
         # Comando para limpar a sessão
         clear_command = f'clear pppoe sessions {pp0}'
         clear_output = ssh.send_command(clear_command)
-        # Aguardar 10 segundos
+        # Aguardar 10 segundos, caso o radius demore, acrescentar mais segundos. Tentei 5s mas não funcionou perfeitamente
         time.sleep(10)
         # Verificar novamente após a limpeza
         final_check = ssh.send_command(f'show subscribers user-name {user_name}')

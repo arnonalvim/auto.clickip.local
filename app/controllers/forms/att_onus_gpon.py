@@ -5,7 +5,7 @@ from wtforms.validators import DataRequired
 
 class Att_onus_gpon_form(FlaskForm):
     hostname = SelectField('Hostname', validators=[DataRequired()], choices=[])
-    # Adicionar "*" como primeira opção
+    # Adicionei "*" como primeira opção
     chassis = SelectField(
         'Chassis',
         validators=[DataRequired()],
