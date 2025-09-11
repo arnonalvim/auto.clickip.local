@@ -71,7 +71,7 @@ def execute_firmware_update(hostname, username, password, selected_onus, firmwar
         ssh = ConnectHandler(**device)
         # Enviar TODOS os comandos de uma vez!
         # Como não retorna nada útil, usamos timeout baixo
-        ssh.send_command_timing(commands_block, read_timeout=10, cmd_verify=False)
+        ssh.send_command_timing(commands_block, read_timeout=50, cmd_verify=False)
         ssh.disconnect()
         return {
             "success": True,

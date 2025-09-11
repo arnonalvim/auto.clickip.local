@@ -484,7 +484,7 @@
     <hr>
 
     <div class="sidenav">
-        <a href="/"><i class="fa fa-home"></i>Home</a>
+        <a href="/"><i class="fa fa-home"></i>Página Inicial</a>
 
         <a href="#" class="toggle-btn collapsed" onclick="toggleSection('Routers', this)">
             <span><i class="fa fa-network-wired"></i> Juniper</span>
@@ -493,36 +493,31 @@
         <ul id="Routers" class="collapsed">
             <li>
                 <a href="{{ url_for('int_summary_bp.interface_summary') }}">
-                    <i class="fas fa-chalkboard-teacher"></i>Get Summary
+                    <i class="fas fa-chalkboard-teacher"></i>Sessões Estabelecidas
                 </a>
             </li>
             <li>
                 <a href="{{ url_for('int_conf_bp.interface_configuration') }}">
-                    <i class="fas fa-chalkboard-teacher"></i>Get Interface Config
+                    <i class="fas fa-chalkboard-teacher"></i>Consultar interfaces vlan
                 </a>
             </li>
             <li>
                 <a href="{{ url_for('set_policy_whitelist_bp.get_policy_whitelist') }}">
-                    <i class="fas fa-chalkboard-teacher"></i>Get Policy Whitelist
+                    <i class="fas fa-chalkboard-teacher"></i>Gerenciar Whitelist
                 </a>
             </li>
             <hr>
             <li>
                 <a href="{{ url_for('set_interface_ae0_unit_vlan_bp.interface_unit') }}">
-                    <i class="fas fa-user-cog"></i>Set Interface ae0 Unit
+                    <i class="fas fa-user-cog"></i>Configurar interface vlan
                 </a>
             <li>
                 <a href="{{ url_for('set_clear_pppoe_session_bp.clear_pppoe_session') }}">
-                    <i class="fas fa-user-cog"></i>Set Clear PPPoE
+                    <i class="fas fa-user-cog"></i>Renovar Sessão PPPoE
                 </a>
             </li>
                 <a href="{{ url_for('int_static_route_bp.set_static_route_page') }}" hidden>
-                    <i class="fas fa-user-cog"></i>Set Static Router
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('set_policy_whitelist_bp.set_policy_whitelist') }}">
-                    <i class="fas fa-user-cog"></i>Set Policy Whitelist
+                    <i class="fas fa-user-cog"></i>Adicionar rota estática
                 </a>
             </li>
             <li>
@@ -544,33 +539,33 @@
         <ul id="OLTs" class="collapsed">
             <li>
                 <a href="{{ url_for('get_mpls_brief_bp.get_mpls_brief') }}">
-                    <i class="fas fa-chalkboard-teacher"></i>Get mpls brief
+                    <i class="fas fa-chalkboard-teacher"></i>Consultar VPLS
                 </a>
             </li>
             <hr>
             <li>
                 <a href="{{ url_for('vlan_config_bp.vlan_config') }}">
-                    <i class="fas fa-user-cog"></i>Set dot1q vlan
+                    <i class="fas fa-user-cog"></i>Adicionar VLAN
                 </a>
             </li>
             <li>
                 <a href="{{ url_for('mpls_l2vpn_bp.mpls_l2vpn') }}">
-                    <i class="fas fa-user-cog"></i>Set mpls vpls tunnel
+                    <i class="fas fa-user-cog"></i>Configurar Túnel VPLS
                 </a>
             </li>
             <li>
                 <a href="{{ url_for('downstream_fec_bp.downstream_fec') }}">
-                    <i class="fas fa-user-cog"></i>Set downstream-fec
+                    <i class="fas fa-user-cog"></i>Habilitar downstream-fec
                 </a>
             </li>
             <li>
                <a href="{{ url_for('shutdown_gpon_bp.shutdown_gpon') }}">
-                     <i class="fas fa-user-cog"></i>Set shutdown gpon
+                     <i class="fas fa-user-cog"></i>Desligar gpon
                 </a>
             </li>
           <li>
         <a href="{{ url_for('set_commands_massive_bp.set_commands_massive') }}">
-            <i class="fas fa-user-cog"></i>Set commands massive
+            <i class="fas fa-user-cog"></i>Comandos em massa
         </a>
     <li>
                 <a href="{{ url_for('reset_onus_gpon_bp.reset_onus_gpon') }}">

@@ -1,34 +1,53 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Get Policy Whitelist</h1>
-
-<hr />
-
-<form action="{{ url_for('set_policy_whitelist_bp.get_policy_whitelist') }}" method="POST" autocomplete="on">
-
-    {{ form.hidden_tag() }}
-
-    <div class="row mb-3">
+<div class="container">
+    <div class="row mb-4">
         <div class="col">
-            <div class="form-floating">
-                {{ form.hostname(class="form-control") }}
-                {{ form.hostname.label }}
+            <h1>Adicione e Consulte IPs na Whitelist</h1>
+            
+            <!-- Navegação clara entre as páginas -->
+            <div class="btn-group mb-3" role="group">
+                <!-- Este botão fica desabilitado pois já estamos na página 'Get' -->
+                <button type="button" class="btn btn-primary" disabled>
+                    Consultar na Whitelist
+                </button>
+                <!-- Este botão leva para a página 'Set' -->
+                <a href="{{ url_for('set_policy_whitelist_bp.manage_policy_whitelist_route', action='set') }}" 
+                   class="btn btn-outline-primary">
+                    Adicionar na Whitelist
+                </a>
             </div>
         </div>
-    </div><!-- hostname -->
-
-    <div class="d-flex justify-content-between">
-        {{ form.submit(class="btn btn-primary") }}
-        <button type="reset" class="btn btn-danger">Reset</button>
     </div>
-    <!-- buttons -->
 
-</form>
+    <hr />
 
-<br>
+    <!-- O formulário continua apontando para a ação 'get', o que está correto -->
+    <form action="{{ url_for('set_policy_whitelist_bp.manage_policy_whitelist_route', action='get') }}" method="POST" autocomplete="on">
 
-<small class="text-muted">'show configuration policy-options prefix-list whitelist-dst'</small>
-<pre class="border border-3 rounded-3 p-3">{{ output }}</pre>
+        {{ form.hidden_tag() }}
 
+        <div class="row mb-3">
+            <div class="col">
+                <div class="form-floating">
+                    {{ form.hostname(class="form-control") }}
+                    {{ form.hostname.label }}
+                </div>
+            </div>
+        </div><!-- hostname -->
+
+        <div class="d-flex justify-content-between">
+            {{ form.submit(class="btn btn-primary") }}
+            <button type="reset" class="btn btn-danger">Reset</button>
+        </div>
+        <!-- buttons -->
+
+    </form>
+
+    <br>
+
+    <small class="text-muted">'show configuration policy-options prefix-list whitelist-dst'</small>
+    <pre class="border border-3 rounded-3 p-3">{{ output if output else '' }}</pre>
+</div>
 {% endblock %}

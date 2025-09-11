@@ -1,46 +1,62 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Set Policy Whitelist</h1>
-
-<hr />
-
-<form action="{{ url_for('set_policy_whitelist_bp.set_policy_whitelist') }}" method="POST"
-    onsubmit="return mySubmitFunction()" autocomplete="on">
-
-    {{ form.hidden_tag() }}
-
-    <div class="row mb-3">
+<div class="container">
+    <div class="row mb-4">
         <div class="col">
-            <div class="form-floating">
-                {{ form.hostname(class="form-control") }}
-                {{ form.hostname.label }}
+            <h1>Adicione e Consulte IPs na Whitelist</h1>
+            
+            <!-- Navegação clara entre as páginas -->
+            <div class="btn-group mb-3" role="group">
+                <!-- Este botão leva para a página 'Get' -->
+                <a href="{{ url_for('set_policy_whitelist_bp.manage_policy_whitelist_route', action='get') }}" 
+                   class="btn btn-outline-primary">
+                    Consultar na Whitelist
+                </a>
+                <!-- Este botão fica desabilitado pois já estamos na página 'Set' -->
+                <button type="button" class="btn btn-primary" disabled>
+                    Adicionar na Whitelist
+                </button>
             </div>
         </div>
-    </div><!-- hostname -->
-
-    <div class="row mb-3">
-        <div class="col">
-            <div class="form-floating">
-                {{ form.prefix_address(class="form-control") }}
-                {{ form.prefix_address.label }}
-            </div>
-        </div>
-    </div><!-- prefix /32 -->
-
-
-    <div class="d-flex justify-content-between">
-        {{ form.submit(class="btn btn-primary") }}
-        <button type="reset" class="btn btn-danger">Reset</button>
     </div>
-    <!-- buttons -->
 
-</form>
+    <hr />
 
-<br>
+    <!-- O formulário agora aponta para a rota unificada com a ação 'set' -->
+    <form action="{{ url_for('set_policy_whitelist_bp.manage_policy_whitelist_route', action='set') }}" method="POST" autocomplete="on">
 
-<small class="text-muted">f'show configuration policy-options prefix-list whitelist-dst | display set | match
-    {prefix}'</small>
-<pre class="border border-3 rounded-3 p-3">{{ output }}</pre>
+        {{ form.hidden_tag() }}
 
+        <div class="row mb-3">
+            <div class="col">
+                <div class="form-floating">
+                    {{ form.hostname(class="form-control") }}
+                    {{ form.hostname.label }}
+                </div>
+            </div>
+        </div><!-- hostname -->
+
+        <div class="row mb-3">
+            <div class="col">
+                <div class="form-floating">
+                    {{ form.prefix_address(class="form-control") }}
+                    {{ form.prefix_address.label }}
+                </div>
+            </div>
+        </div><!-- prefix /32 -->
+
+        <div class="d-flex justify-content-between">
+            {{ form.submit(class="btn btn-primary") }}
+            <button type="reset" class="btn btn-danger">Reset</button>
+        </div>
+        <!-- buttons -->
+
+    </form>
+
+    <br>
+
+    <small class="text-muted">'set policy-options prefix-list whitelist-dst {{ prefix }}'</small>
+    <pre class="border border-3 rounded-3 p-3">{{ output if output else '' }}</pre>
+</div>
 {% endblock %}
