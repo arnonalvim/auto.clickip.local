@@ -88,14 +88,13 @@ def get_policy_whitelist():
 def manage_policy_whitelist_route():
     """Nova rota unificada para gerenciar policy whitelist"""
     action = request.args.get('action', 'get')
-    
     # Usar o formulário correto baseado na ação
     if action == 'set':
         form = SetPolicyWhitelistForm()
     else:
         form = GetPolicyWhitelistForm()
         action = 'get'
-    
+
     hosts = db.session.execute(db.select(Routers).order_by(Routers.ip_address)).scalars().all()
     form.hostname.choices = [(host.ip_address, host.hostname) for host in hosts]
     current_user_decrypted_password = fernet_key.decrypt(current_user.password).decode('utf-8')
@@ -121,7 +120,6 @@ def manage_policy_whitelist_route():
                 )
 
             flash('Comando enviado!', category='success')
-            
         except Exception as e:
             flash(f'Erro ao executar comando: {str(e)}', category='danger')
 

@@ -48,14 +48,12 @@ def get_policy_whitelist(hostname, username, password):
 def manage_policy_whitelist(hostname, username, password, prefix=None, action='get'):
     """
     Função unificada para gerenciar policy whitelist.
-    
     Args:
         hostname: IP ou hostname do router
         username: Nome de usuário
         password: Senha
         prefix: Prefixo (obrigatório para action='set')
         action: 'get' ou 'set'
-    
     Returns:
         str: Output do comando
     """
@@ -72,7 +70,6 @@ def manage_policy_whitelist(hostname, username, password, prefix=None, action='g
     }
 
     ssh = ConnectHandler(**router)
-    
     if action == 'set':
         if prefix:
             ssh.send_config_set(f'set policy-options prefix-list whitelist-dst {prefix}')
