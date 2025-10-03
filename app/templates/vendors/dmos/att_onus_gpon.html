@@ -10,10 +10,47 @@
 
     <div class="mb-3">
         <label class="form-label fw-semibold">
-            <i class="fas fa-server me-2 text-primary"></i>Selecionar OLT
+            <i class="fas fa-server me-2 text-primary"></i>Selecionar OLTs
         </label>
         <div class="position-relative" id="searchable-select-wrapper">
-            {{ form.hostname(class="form-control searchable-select") }}
+            <!-- Campo oculto original do formulário (mantido oculto) -->
+            {{ form.hostname(style="display: none;") }}
+            
+            <!-- Campo oculto para armazenar as seleções -->
+            {{ form.selected_olts(id="selected_olts") }}
+            
+            <!-- Input de busca -->
+            <input type="text" class="form-control searchable-input" id="searchInput" 
+                   placeholder="Escreva aqui para filtrar OLTs...">
+            
+            <!-- Container das opções com checkboxes -->
+            <div class="searchable-options-container mt-2" id="optionsContainer" 
+                 style="max-height: 300px; overflow-y: auto; border: 1px solid #ced4da; border-radius: 0.375rem; background: white; display: none;">
+                
+                <!-- Opção "Selecionar Todos" -->
+                <div class="searchable-option p-2 border-bottom" style="background-color: #f8f9fa;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selectAllOLTs">
+                        <label class="form-check-label fw-bold" for="selectAllOLTs">
+                            Selecionar Todos
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- As opções serão inseridas aqui via JavaScript -->
+            </div>
+            
+            <!-- Área para mostrar as OLTs selecionadas -->
+            <div class="selected-olts-display mt-2" id="selectedOltsDisplay" style="display: none;">
+                <small class="text-muted">OLTs selecionadas:</small>
+                <div class="d-flex flex-wrap gap-1 mt-1" id="selectedOltsTags"></div>
+            </div>
+        </div>
+        
+        <div class="mt-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="clearOltSelection">
+                <i class="fas fa-times me-1"></i>Limpar Seleção
+            </button>
         </div>
     </div>
 
@@ -51,7 +88,7 @@
         {{ form.submit_get_info(class="btn btn-primary") }}
         <div class="form-text">
             <i class="fas fa-clock me-1 text-warning"></i>
-            <strong>Atenção:</strong> A consulta pode demorar até 10 minutos dependendo da quantidade de ONUs na porta.
+            <strong>Atenção:</strong> A consulta pode demorar até 10 minutos dependendo da quantidade de ONUs na porta e do número de OLTs selecionadas.
         </div>
     </div>
 
@@ -61,124 +98,134 @@
     <div class="alert alert-info" role="alert">
         <i class="fas fa-info-circle me-2"></i>
         <strong>Instruções:</strong> Selecione as ONUs que deseja atualizar marcando as caixas de seleção na tabela abaixo. 
-        Certifique-se de que o arquivo de firmware que foi informado no campo acima está na OLT.
+        Certifique-se de que o arquivo de firmware que foi informado no campo acima está nas OLTs selecionadas.
     </div>
 
-    <!-- Filtros da tabela -->
-    <div class="card mb-3">
-        <div class="card-header">
-            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filtragem - Não esqueça de remover espaços ou caracteres inválidos</h6>
-        </div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold">Interface</label>
-                    <input type="text" class="form-control form-control-sm filter-input" 
-                           id="filter-interface" placeholder="Filtrar interface...">
-                </div>
-                <div class="col-md-1">
-                    <label class="form-label fw-semibold">ID</label>
-                    <input type="text" class="form-control form-control-sm filter-input" 
-                           id="filter-id" placeholder="ID...">
-                </div>
-                <div class="col-md-1">
-                    <label class="form-label fw-semibold">Estado</label>
-                    <select class="form-select form-select-sm filter-input" id="filter-estado">
-                        <option value="">Todos</option>
-                        <option value="Up">Up</option>
-                        <option value="Down">Down</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold">Serial Number</label>
-                    <input type="text" class="form-control form-control-sm filter-input" 
-                           id="filter-serial" placeholder="Serial...">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold">Firmware Active</label>
-                    <input type="text" class="form-control form-control-sm filter-input" 
-                           id="filter-active-fw" placeholder="Firmware atual...">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold">Firmware Anterior</label>
-                    <input type="text" class="form-control form-control-sm filter-input" 
-                           id="filter-standby-fw" placeholder="Firmware em espera...">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold">Equipamento</label>
-                    <input type="text" class="form-control form-control-sm filter-input" 
-                           id="filter-equipamento" placeholder="Equipamento...">
-                </div>
+<!-- Filtros da tabela - ATUALIZAR -->
+<div class="card mb-3">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filtragem - Não esqueça de remover espaços ou caracteres inválidos</h6>
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Interface</label>
+                <input type="text" class="form-control form-control-sm filter-input" 
+                       id="filter-interface" placeholder="Filtrar interface...">
             </div>
-            <div class="row mt-2">
-                <div class="col-12">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="clearFilters">
-                        <i class="fas fa-times me-1"></i>Limpar Filtros
-                    </button>
-                    <span class="ms-3 text-muted" id="resultCount">
-                        Mostrando <span id="visibleRows">{{ onus_data|length }}</span> de {{ onus_data|length }} ONUs
+            <div class="col-md-1">
+                <label class="form-label fw-semibold">ID</label>
+                <input type="text" class="form-control form-control-sm filter-input" 
+                       id="filter-id" placeholder="ID...">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label fw-semibold">Estado</label>
+                <select class="form-select form-select-sm filter-input" id="filter-estado">
+                    <option value="">Todos</option>
+                    <option value="Up">Up</option>
+                    <option value="Down">Down</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Serial Number</label>
+                <input type="text" class="form-control form-control-sm filter-input" 
+                       id="filter-serial" placeholder="Serial...">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label fw-semibold">Active FW</label>
+                <input type="text" class="form-control form-control-sm filter-input" 
+                       id="filter-active-fw" placeholder="versão atual...">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label fw-semibold">Standby FW</label>
+                <input type="text" class="form-control form-control-sm filter-input" 
+                       id="filter-standby-fw" placeholder="em espera...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Equipamento</label>
+                <input type="text" class="form-control form-control-sm filter-input" 
+                       id="filter-equipamento" placeholder="Equipamento...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">OLT</label>
+                <input type="text" class="form-control form-control-sm filter-input" 
+                       id="filter-olt" placeholder="OLT...">
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-12">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="clearFilters">
+                    <i class="fas fa-times me-1"></i>Limpar Filtros
+                </button>
+                <span class="ms-3 text-muted" id="resultCount">
+                    Mostrando <span id="visibleRows">{{ onus_data|length }}</span> de {{ onus_data|length }} ONUs
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela - ATUALIZAR -->
+<div class="table-responsive">
+    <table class="table table-striped table-hover" id="onusTable">
+        <thead class="table-dark">
+            <tr>
+                <th>
+                    <input type="checkbox" id="selectAll" class="form-check-input">
+                    <label for="selectAll" class="form-check-label ms-1">Todos</label>
+                </th>
+                <th>Interface</th>
+                <th>ID</th>
+                <th>Estado</th>
+                <th>Serial Number</th>
+                <th>Firmware Active</th>
+                <th>Firmware Standby</th>
+                <th>Equipamento</th>
+                <th>OLT</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for onu in onus_data %}
+            <tr class="onu-row" 
+                data-interface="{{ onu.interface }}"
+                data-id="{{ onu.onu_id }}"
+                data-estado="{{ onu.oper_state }}"
+                data-serial="{{ onu.serial_number }}"
+                data-active-fw="{{ onu.active_fw }}"
+                data-standby-fw="{{ onu.standby_fw }}"
+                data-equipamento="{{ onu.eq_id }}"
+                data-olt="{{ onu.hostname }}">
+                <td>
+                    <input type="checkbox" 
+                           class="form-check-input onu-checkbox" 
+                           data-chassis="{{ onu.chassis }}"
+                           data-slot="{{ onu.slot }}"
+                           data-port="{{ onu.port }}"
+                           data-onu-id="{{ onu.onu_id }}"
+                           data-interface="{{ onu.interface }}"
+                           data-serial="{{ onu.serial_number }}"
+                           data-active-fw="{{ onu.active_fw }}"
+                           data-standby-fw="{{ onu.standby_fw }}"
+                           data-eq-id="{{ onu.eq_id }}"
+                           data-hostname="{{ onu.hostname }}">
+                </td>
+                <td>{{ onu.interface }}</td>
+                <td>{{ onu.onu_id }}</td>
+                <td>
+                    <span class="badge {% if onu.oper_state == 'Up' %}bg-success{% else %}bg-danger{% endif %}">
+                        {{ onu.oper_state }}
                     </span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="table-responsive">
-        <table class="table table-striped table-hover" id="onusTable">
-            <thead class="table-dark">
-                <tr>
-                    <th>
-                        <input type="checkbox" id="selectAll" class="form-check-input">
-                        <label for="selectAll" class="form-check-label ms-1">Todos</label>
-                    </th>
-                    <th>Interface</th>
-                    <th>ID</th>
-                    <th>Estado</th>
-                    <th>Serial Number</th>
-                    <th>Firmware Ativo</th>
-                    <th>Firmware Standby</th>
-                    <th>Equipamento</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for onu in onus_data %}
-                <tr class="onu-row" 
-                    data-interface="{{ onu.interface }}"
-                    data-id="{{ onu.onu_id }}"
-                    data-estado="{{ onu.oper_state }}"
-                    data-serial="{{ onu.serial_number }}"
-                    data-active-fw="{{ onu.active_fw }}"
-                    data-standby-fw="{{ onu.standby_fw }}"
-                    data-equipamento="{{ onu.eq_id }}">
-                    <td>
-                        <input type="checkbox" 
-                               class="form-check-input onu-checkbox" 
-                               data-chassis="{{ onu.chassis }}"
-                               data-slot="{{ onu.slot }}"
-                               data-port="{{ onu.port }}"
-                               data-onu-id="{{ onu.onu_id }}"
-                               data-interface="{{ onu.interface }}"
-                               data-serial="{{ onu.serial_number }}"
-                               data-active-fw="{{ onu.active_fw }}"
-                               data-standby-fw="{{ onu.standby_fw }}"
-                               data-eq-id="{{ onu.eq_id }}">
-                    </td>
-                    <td>{{ onu.interface }}</td>
-                    <td>{{ onu.onu_id }}</td>
-                    <td>
-                        <span class="badge {% if onu.oper_state == 'Up' %}bg-success{% else %}bg-danger{% endif %}">
-                            {{ onu.oper_state }}
-                        </span>
-                    </td>
-                    <td>{{ onu.serial_number }}</td>
-                    <td>{{ onu.active_fw }}</td>
-                    <td>{{ onu.standby_fw }}</td>
-                    <td>{{ onu.eq_id }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                </td>
+                <td>{{ onu.serial_number }}</td>
+                <td>{{ onu.active_fw }}</td>
+                <td>{{ onu.standby_fw }}</td>
+                <td>{{ onu.eq_id }}</td>
+                <td>{{ onu.hostname }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
     <div class="mt-3">
         <div class="card">
@@ -205,138 +252,208 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Script para busca de OLT
-    const selectElement = document.querySelector('.searchable-select');
+    console.log('DEBUG JS: Iniciando script...');
+    
+    // Script para seleção múltipla de OLTs
+    const originalSelectElement = document.querySelector('select[name="hostname"]');
+    const searchInput = document.getElementById('searchInput');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const selectedOltsInput = document.getElementById('selected_olts');
+    const selectedOltsDisplay = document.getElementById('selectedOltsDisplay');
+    const selectedOltsTags = document.getElementById('selectedOltsTags');
+    const selectAllOLTsCheckbox = document.getElementById('selectAllOLTs');
+    const clearOltSelectionBtn = document.getElementById('clearOltSelection');
 
-    if (selectElement) {
-        const container = document.createElement('div');
-        container.className = 'searchable-select-container';
-        container.style.position = 'relative';
+    let selectedOlts = [];
+    let allOltOptions = [];
 
-        const searchInput = document.createElement('input');
-        searchInput.type = 'text';
-        searchInput.className = 'form-control searchable-input';
-        searchInput.placeholder = 'Escreva aqui para filtrar OLTs...';
-        searchInput.style.marginBottom = '5px';
+    // Debug: verificar se o select original existe
+    console.log('DEBUG JS: Select original encontrado:', originalSelectElement);
 
-        const optionsList = document.createElement('div');
-        optionsList.className = 'searchable-options';
-        optionsList.style.cssText = `
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
-            background: white;
-            position: absolute;
-            width: 100%;
-            z-index: 1000;
-            display: none;
+    // Obter opções do formulário original
+    if (originalSelectElement) {
+        allOltOptions = Array.from(originalSelectElement.options).slice(1).map(option => ({
+            value: option.value,
+            text: option.text
+        }));
+        console.log('DEBUG JS: Opções carregadas:', allOltOptions.length);
+    } else {
+        console.error('ERROR JS: Select original não encontrado!');
+        return;
+    }
+
+    function createOltOption(option) {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'searchable-option p-2 border-bottom olt-option';
+        optionDiv.style.cursor = 'pointer';
+        
+        const safeId = option.value.replace(/[^a-zA-Z0-9]/g, '_');
+        
+        optionDiv.innerHTML = `
+            <div class="form-check">
+                <input class="form-check-input olt-checkbox" type="checkbox" value="${option.value}" id="olt_${safeId}">
+                <label class="form-check-label" for="olt_${safeId}">
+                    ${option.text}
+                </label>
+            </div>
         `;
 
-        const limparBtn = document.createElement('button');
-        limparBtn.type = 'button';
-        limparBtn.className = 'btn btn-outline-secondary mt-2';
-        limparBtn.textContent = 'Limpar seleção';
+        // Adicionar eventos
+        const checkbox = optionDiv.querySelector('.olt-checkbox');
 
-        function limparSelecao() {
-            selectElement.value = '';
-            searchInput.value = '';
-            optionsList.style.display = 'none';
-
-            const event = new Event('change', { bubbles: true });
-            selectElement.dispatchEvent(event);
-        }
-        limparBtn.addEventListener('click', limparSelecao);
-
-        const allOptions = Array.from(selectElement.options).slice(1);
-
-        function createOptionItem(option) {
-            const item = document.createElement('div');
-            item.className = 'searchable-option';
-            item.style.cssText = `
-                padding: 8px 12px;
-                cursor: pointer;
-                border-bottom: 1px solid #f0f0f0;
-            `;
-            item.textContent = option.text;
-            item.dataset.value = option.value;
-
-            item.addEventListener('mouseenter', function () {
-                this.style.backgroundColor = '#f8f9fa';
-            });
-
-            item.addEventListener('mouseleave', function () {
-                this.style.backgroundColor = 'white';
-            });
-
-            item.addEventListener('click', function () {
-                selectElement.value = this.dataset.value;
-                searchInput.value = this.textContent;
-                optionsList.style.display = 'none';
-
-                const event = new Event('change', { bubbles: true });
-                selectElement.dispatchEvent(event);
-            });
-
-            return item;
-        }
-
-        function filterOptions(searchTerm) {
-            optionsList.innerHTML = '';
-
-            const filteredOptions = allOptions.filter(option =>
-                option.text.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-
-            if (filteredOptions.length === 0) {
-                const noResults = document.createElement('div');
-                noResults.style.cssText = 'padding: 8px 12px; color: #6c757d; font-style: italic;';
-                noResults.textContent = 'Nenhuma OLT encontrada';
-                optionsList.appendChild(noResults);
-            } else {
-                filteredOptions.forEach(option => {
-                    optionsList.appendChild(createOptionItem(option));
-                });
-            }
-        }
-
-        searchInput.addEventListener('input', function () {
-            const searchTerm = this.value;
-            filterOptions(searchTerm);
-            optionsList.style.display = searchTerm ? 'block' : 'none';
+        optionDiv.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f8f9fa';
         });
 
-        searchInput.addEventListener('focus', function () {
-            if (this.value) {
-                filterOptions(this.value);
-                optionsList.style.display = 'block';
+        optionDiv.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = 'white';
+        });
+
+        optionDiv.addEventListener('click', function(e) {
+            if (e.target.type !== 'checkbox') {
+                checkbox.checked = !checkbox.checked;
+                updateSelectedOlts();
             }
         });
 
-        document.addEventListener('click', function (e) {
-            if (!container.contains(e.target)) {
-                optionsList.style.display = 'none';
-            }
+        checkbox.addEventListener('change', updateSelectedOlts);
+
+        return optionDiv;
+    }
+
+    function renderOltOptions(filteredOptions = allOltOptions) {
+        // Limpar opções existentes (exceto "Selecionar Todos")
+        const existingOptions = optionsContainer.querySelectorAll('.olt-option');
+        existingOptions.forEach(option => option.remove());
+
+        // Adicionar opções filtradas
+        filteredOptions.forEach(option => {
+            optionsContainer.appendChild(createOltOption(option));
         });
 
-        if (selectElement.value) {
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-            searchInput.value = selectedOption.text;
+        // Atualizar estado do "Selecionar Todos"
+        updateSelectAllOltsState();
+    }
+
+    function filterOltOptions(searchTerm) {
+        const filteredOptions = allOltOptions.filter(option =>
+            option.text.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        renderOltOptions(filteredOptions);
+    }
+
+    function updateSelectedOlts() {
+        const checkedBoxes = optionsContainer.querySelectorAll('.olt-checkbox:checked');
+        selectedOlts = Array.from(checkedBoxes).map(checkbox => ({
+            value: checkbox.value,
+            text: checkbox.nextElementSibling.textContent.trim()
+        }));
+
+        console.log('DEBUG JS: OLTs selecionadas:', selectedOlts);
+
+        // Atualizar campo oculto
+        selectedOltsInput.value = selectedOlts.map(olt => olt.value).join(',');
+        
+        // Para compatibilidade, definir o primeiro valor no select original
+        if (selectedOlts.length > 0) {
+            originalSelectElement.value = selectedOlts[0].value;
+        } else {
+            originalSelectElement.value = '';
         }
 
-        const wrapper = document.getElementById('searchable-select-wrapper');
-        if (wrapper) {
-            wrapper.appendChild(container);
-            container.appendChild(searchInput);
-            container.appendChild(optionsList);
-            container.appendChild(limparBtn);
+        // Atualizar display visual
+        updateSelectedOltsDisplay();
+        updateSelectAllOltsState();
+        
+        console.log('DEBUG JS: Campo selected_olts:', selectedOltsInput.value);
+        console.log('DEBUG JS: Campo hostname original:', originalSelectElement.value);
+    }
+
+    function updateSelectedOltsDisplay() {
+        if (selectedOlts.length > 0) {
+            selectedOltsDisplay.style.display = 'block';
+            selectedOltsTags.innerHTML = '';
+            
+            selectedOlts.forEach(olt => {
+                const tag = document.createElement('span');
+                tag.className = 'badge bg-primary me-1 mb-1';
+                tag.innerHTML = `
+                    ${olt.text}
+                    <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.7em;" onclick="removeOlt('${olt.value}')"></button>
+                `;
+                selectedOltsTags.appendChild(tag);
+            });
+        } else {
+            selectedOltsDisplay.style.display = 'none';
         }
+    }
 
-        selectElement.style.display = 'none';
+    function updateSelectAllOltsState() {
+        const visibleCheckboxes = optionsContainer.querySelectorAll('.olt-checkbox');
+        const checkedVisible = optionsContainer.querySelectorAll('.olt-checkbox:checked');
+        
+        if (visibleCheckboxes.length === 0) {
+            selectAllOLTsCheckbox.checked = false;
+            selectAllOLTsCheckbox.indeterminate = false;
+        } else {
+            selectAllOLTsCheckbox.checked = checkedVisible.length === visibleCheckboxes.length;
+            selectAllOLTsCheckbox.indeterminate = checkedVisible.length > 0 && checkedVisible.length < visibleCheckboxes.length;
+        }
+    }
 
-        allOptions.forEach(option => {
-            optionsList.appendChild(createOptionItem(option));
+    // Função global para remover OLT
+    window.removeOlt = function(oltValue) {
+        const checkbox = optionsContainer.querySelector(`input[value="${oltValue}"]`);
+        if (checkbox) {
+            checkbox.checked = false;
+            updateSelectedOlts();
+        }
+    };
+
+    // Event listeners
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value;
+        filterOltOptions(searchTerm);
+        if (searchTerm) {
+            optionsContainer.style.display = 'block';
+        }
+    });
+
+    searchInput.addEventListener('focus', function() {
+        optionsContainer.style.display = 'block';
+    });
+
+    selectAllOLTsCheckbox.addEventListener('change', function() {
+        const visibleCheckboxes = optionsContainer.querySelectorAll('.olt-checkbox');
+        visibleCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
         });
+        updateSelectedOlts();
+    });
+
+    clearOltSelectionBtn.addEventListener('click', function() {
+        const allCheckboxes = optionsContainer.querySelectorAll('.olt-checkbox');
+        allCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        searchInput.value = '';
+        updateSelectedOlts();
+        renderOltOptions();
+        optionsContainer.style.display = 'none';
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!document.getElementById('searchable-select-wrapper').contains(e.target)) {
+            optionsContainer.style.display = 'none';
+        }
+    });
+
+    // Inicializar
+    if (allOltOptions.length > 0) {
+        renderOltOptions();
+        console.log('DEBUG JS: Interface inicializada com sucesso');
+    } else {
+        console.error('ERROR JS: Nenhuma opção de OLT encontrada');
     }
 
     // Script para filtros da tabela
@@ -346,55 +463,58 @@ document.addEventListener('DOMContentLoaded', function () {
     const visibleRowsSpan = document.getElementById('visibleRows');
     const totalRows = tableRows.length;
 
-    function applyFilters() {
-        const filters = {
-            interface: document.getElementById('filter-interface').value.toLowerCase(),
-            id: document.getElementById('filter-id').value.toLowerCase(),
-            estado: document.getElementById('filter-estado').value.toLowerCase(),
-            serial: document.getElementById('filter-serial').value.toLowerCase(),
-            activeFw: document.getElementById('filter-active-fw').value.toLowerCase(),
-            standbyFw: document.getElementById('filter-standby-fw').value.toLowerCase(),
-            equipamento: document.getElementById('filter-equipamento').value.toLowerCase()
+function applyFilters() {
+    const filters = {
+        interface: document.getElementById('filter-interface').value.toLowerCase(),
+        id: document.getElementById('filter-id').value.toLowerCase(),
+        estado: document.getElementById('filter-estado').value.toLowerCase(),
+        serial: document.getElementById('filter-serial').value.toLowerCase(),
+        activeFw: document.getElementById('filter-active-fw').value.toLowerCase(),
+        standbyFw: document.getElementById('filter-standby-fw').value.toLowerCase(),
+        equipamento: document.getElementById('filter-equipamento').value.toLowerCase(),
+        olt: document.getElementById('filter-olt').value.toLowerCase()
+    };
+
+    let visibleCount = 0;
+
+    tableRows.forEach(row => {
+        const rowData = {
+            interface: row.dataset.interface.toLowerCase(),
+            id: row.dataset.id.toLowerCase(),
+            estado: row.dataset.estado.toLowerCase(),
+            serial: row.dataset.serial.toLowerCase(),
+            activeFw: row.dataset.activeFw.toLowerCase(),
+            standbyFw: row.dataset.standbyFw.toLowerCase(),
+            equipamento: (row.dataset.equipamento || '').toLowerCase(),
+            olt: (row.dataset.olt || '').toLowerCase()
         };
 
-        let visibleCount = 0;
+        const matchesFilters = 
+            rowData.interface.includes(filters.interface) &&
+            rowData.id.includes(filters.id) &&
+            (filters.estado === '' || rowData.estado === filters.estado) &&
+            rowData.serial.includes(filters.serial) &&
+            rowData.activeFw.includes(filters.activeFw) &&
+            rowData.standbyFw.includes(filters.standbyFw) &&
+            rowData.equipamento.includes(filters.equipamento) &&
+            rowData.olt.includes(filters.olt);
 
-        tableRows.forEach(row => {
-            const rowData = {
-                interface: row.dataset.interface.toLowerCase(),
-                id: row.dataset.id.toLowerCase(),
-                estado: row.dataset.estado.toLowerCase(),
-                serial: row.dataset.serial.toLowerCase(),
-                activeFw: row.dataset.activeFw.toLowerCase(),
-                standbyFw: row.dataset.standbyFw.toLowerCase(),
-                equipamento: row.dataset.equipamento.toLowerCase()
-            };
-
-            const matchesFilters = 
-                rowData.interface.includes(filters.interface) &&
-                rowData.id.includes(filters.id) &&
-                (filters.estado === '' || rowData.estado === filters.estado) &&
-                rowData.serial.includes(filters.serial) &&
-                rowData.activeFw.includes(filters.activeFw) &&
-                rowData.standbyFw.includes(filters.standbyFw) &&
-                rowData.equipamento.includes(filters.equipamento);
-
-            if (matchesFilters) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-                const checkbox = row.querySelector('.onu-checkbox');
-                if (checkbox) {
-                    checkbox.checked = false;
-                }
+        if (matchesFilters) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+            const checkbox = row.querySelector('.onu-checkbox');
+            if (checkbox) {
+                checkbox.checked = false;
             }
-        });
+        }
+    });
 
-        visibleRowsSpan.textContent = visibleCount;
-        updateSelectAllState();
-        updatePreview();
-    }
+    visibleRowsSpan.textContent = visibleCount;
+    updateSelectAllState();
+    updatePreview();
+}
 
     function clearAllFilters() {
         filterInputs.forEach(input => {
@@ -419,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function () {
         clearFiltersBtn.addEventListener('click', clearAllFilters);
     }
 
-    // Script ajax pego da internet
+    // Script para seleção de ONUs e preview
     const selectAllCheckbox = document.getElementById('selectAll');
     const updateBtn = document.getElementById('updateBtn');
     const updateBtnText = document.getElementById('updateBtnText');
@@ -473,15 +593,24 @@ document.addEventListener('DOMContentLoaded', function () {
             let selectedOnus = [];
 
             if (selectedCheckboxes.length > 0 && firmwareFile) {
+                // Agrupar comandos por hostname
+                const commandsByHost = {};
+                
                 selectedCheckboxes.forEach(checkbox => {
                     const chassis = checkbox.dataset.chassis;
                     const slot = checkbox.dataset.slot;
                     const port = checkbox.dataset.port;
                     const onuId = checkbox.dataset.onuId;
+                    const hostname = checkbox.dataset.hostname;
                     
-                    commands.push(`request firmware onu install ${firmwareFile} interface gpon ${chassis}/${slot}/${port} onu ${onuId}`);
+                    if (!commandsByHost[hostname]) {
+                        commandsByHost[hostname] = [];
+                    }
+                    
+                    commandsByHost[hostname].push(`request firmware onu install ${firmwareFile} interface gpon ${chassis}/${slot}/${port} onu ${onuId}`);
                     
                     selectedOnus.push({
+                        hostname: hostname,
                         chassis: chassis,
                         slot: slot,
                         port: port,
@@ -494,9 +623,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                 });
                 
+                // Formatar comandos agrupados por hostname
+                Object.keys(commandsByHost).forEach(hostname => {
+                    commands.push(`\n=== ${hostname} ===`);
+                    commands.push(...commandsByHost[hostname]);
+                });
+                
                 commandsPreview.textContent = commands.join('\n');
                 updateBtn.disabled = false;
                 selectedOnusInput.value = JSON.stringify(selectedOnus);
+                
+                console.log('DEBUG JS: ONUs selecionadas para atualização:', selectedOnus);
             } else {
                 if (selectedCheckboxes.length === 0) {
                     commandsPreview.textContent = 'Selecione ONUs para ver os comandos que serão executados...';
@@ -514,7 +651,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 existingAlert.remove();
             }
             
-            // Criar o alert como toast no topo da página
             const alertDiv = document.createElement('div');
             alertDiv.id = 'flashAlert';
             alertDiv.style.cssText = `
@@ -535,10 +671,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             `;
             
-            // Adicionar ao body
             document.body.appendChild(alertDiv);
             
-            // Esconder depois de 5 segundos
             setTimeout(() => {
                 if (document.getElementById('flashAlert')) {
                     alertDiv.remove();
@@ -546,51 +680,65 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 5000);
         }
 
-        // AJAX para atualização de firmware
         if (updateBtn) {
             updateBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 
-                const hostname = selectElement.value;
+                const selectedOltsValues = selectedOltsInput.value;
                 const firmwareFile = firmwareInput.value;
                 const selectedOnusData = selectedOnusInput.value;
                 
-                if (!hostname || !firmwareFile || !selectedOnusData) {
-                    showAlert('Por favor, preencha todos os campos necessários', 'danger');
+                console.log('DEBUG JS: Dados para envio:');
+                console.log('- OLTs selecionadas:', selectedOltsValues);
+                console.log('- Firmware:', firmwareFile);
+                console.log('- ONUs selecionadas:', selectedOnusData);
+                
+                if (!selectedOltsValues || !firmwareFile || !selectedOnusData) {
+                    showAlert('Por favor, preencha todos os campos necessários e selecione pelo menos uma OLT e uma ONU', 'danger');
                     return;
                 }
 
-                // loading
                 updateBtn.disabled = true;
                 updateBtnText.textContent = 'Enviando comandos...';
                 updateSpinner.style.display = 'inline-block';
                 
-                // Enviar AJAX
+                const requestData = {
+                    selected_olts: selectedOltsValues.split(','),
+                    firmware_file: firmwareFile,
+                    selected_onus: JSON.parse(selectedOnusData)
+                };
+                
+                console.log('DEBUG JS: Enviando requisição:', requestData);
+                
                 fetch("{{ url_for('att_onus_gpon_bp.att_onus_gpon_update') }}", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
                     },
-                    body: JSON.stringify({
-                        hostname: hostname,
-                        firmware_file: firmwareFile,
-                        selected_onus: JSON.parse(selectedOnusData)
-                    })
+                    body: JSON.stringify(requestData)
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('DEBUG JS: Resposta recebida:', response);
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('DEBUG JS: Dados da resposta:', data);
                     if (data.success) {
                         showAlert(data.message, 'success');
                     } else {
                         showAlert(data.message, 'danger');
                     }
+                    
+                    if (data.details) {
+                        console.log('DEBUG JS: Detalhes da execução:', data.details);
+                    }
                 })
                 .catch(error => {
+                    console.error('ERROR JS: Erro na requisição:', error);
                     showAlert('Erro na comunicação com o servidor: ' + error.message, 'danger');
                 })
                 .finally(() => {
-                    // Restaurar botão
                     updateBtn.disabled = false;
                     updateBtnText.textContent = 'Requisitar Atualização';
                     updateSpinner.style.display = 'none';

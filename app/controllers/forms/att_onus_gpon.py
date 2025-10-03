@@ -5,6 +5,8 @@ from wtforms.validators import DataRequired
 
 class Att_onus_gpon_form(FlaskForm):
     hostname = SelectField('Hostname', validators=[DataRequired()], choices=[])
+    # Campo oculto para armazenar as OLTs selecionadas (valores separados por vírgula)
+    selected_olts = HiddenField()
     # Adicionei "*" como primeira opção
     chassis = SelectField(
         'Chassis',
