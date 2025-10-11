@@ -1,753 +1,2093 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Atualização de ONUs por GPON</h1>
-
-<hr>
-
-<form method="POST" action="{{url_for('att_onus_gpon_bp.att_onus_gpon')}}" autocomplete="on" id="mainForm">
-    {{ form.hidden_tag() }}
-
-    <div class="mb-3">
-        <label class="form-label fw-semibold">
-            <i class="fas fa-server me-2 text-primary"></i>Selecionar OLTs
-        </label>
-        <div class="position-relative" id="searchable-select-wrapper">
-            <!-- Campo oculto original do formulário (mantido oculto) -->
-            {{ form.hostname(style="display: none;") }}
-            
-            <!-- Campo oculto para armazenar as seleções -->
-            {{ form.selected_olts(id="selected_olts") }}
-            
-            <!-- Input de busca -->
-            <input type="text" class="form-control searchable-input" id="searchInput" 
-                   placeholder="Escreva aqui para filtrar OLTs...">
-            
-            <!-- Container das opções com checkboxes -->
-            <div class="searchable-options-container mt-2" id="optionsContainer" 
-                 style="max-height: 300px; overflow-y: auto; border: 1px solid #ced4da; border-radius: 0.375rem; background: white; display: none;">
-                
-                <!-- Opção "Selecionar Todos" -->
-                <div class="searchable-option p-2 border-bottom" style="background-color: #f8f9fa;">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="selectAllOLTs">
-                        <label class="form-check-label fw-bold" for="selectAllOLTs">
-                            Selecionar Todos
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- As opções serão inseridas aqui via JavaScript -->
-            </div>
-            
-            <!-- Área para mostrar as OLTs selecionadas -->
-            <div class="selected-olts-display mt-2" id="selectedOltsDisplay" style="display: none;">
-                <small class="text-muted">OLTs selecionadas:</small>
-                <div class="d-flex flex-wrap gap-1 mt-1" id="selectedOltsTags"></div>
-            </div>
-        </div>
-        
-        <div class="mt-2">
-            <button type="button" class="btn btn-outline-secondary btn-sm" id="clearOltSelection">
-                <i class="fas fa-times me-1"></i>Limpar Seleção
-            </button>
-        </div>
-    </div>
-
-    <div class="row g-3 mb-3">
-        <div class="col-2">
-            <div class="form-floating">
-                {{ form.chassis(class="form-control") }}
-                {{ form.chassis.label }}
-            </div>
-        </div>
-        <div class="col-2">
-            <div class="form-floating">
-                {{ form.slot(class="form-control") }}
-                {{ form.slot.label }}
-            </div>
-        </div>
-        <div class="col-2">
-            <div class="form-floating">
-                {{ form.port_id(class="form-control") }}
-                {{ form.port_id.label }}
-            </div>
-        </div>
-    </div>
-
-    <!-- Campo de firmware sempre visível -->
-    <div class="mb-3">
-        <label class="form-label fw-semibold">
-            <i class="fas fa-file me-2 text-primary"></i>Arquivo de Firmware
-        </label>
-        {{ form.firmware_file(class="form-control", placeholder="Digite o nome do arquivo de firmware (necessário apenas para atualização)") }}
-        <div class="form-text">show firmware onu | tab</div>
-    </div>
-
-    <div class="mb-3">
-        {{ form.submit_get_info(class="btn btn-primary") }}
-        <div class="form-text">
-            <i class="fas fa-clock me-1 text-warning"></i>
-            <strong>Atenção:</strong> A consulta pode demorar até 10 minutos dependendo da quantidade de ONUs na porta e do número de OLTs selecionadas.
-        </div>
-    </div>
-
-    {% if show_table and onus_data %}
-    <hr>
-    
-    <div class="alert alert-info" role="alert">
-        <i class="fas fa-info-circle me-2"></i>
-        <strong>Instruções:</strong> Selecione as ONUs que deseja atualizar marcando as caixas de seleção na tabela abaixo. 
-        Certifique-se de que o arquivo de firmware que foi informado no campo acima está nas OLTs selecionadas.
-    </div>
-
-<!-- Filtros da tabela - ATUALIZAR -->
-<div class="card mb-3">
-    <div class="card-header">
-        <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filtragem - Não esqueça de remover espaços ou caracteres inválidos</h6>
-    </div>
-    <div class="card-body">
-        <div class="row g-2">
-            <div class="col-md-2">
-                <label class="form-label fw-semibold">Interface</label>
-                <input type="text" class="form-control form-control-sm filter-input" 
-                       id="filter-interface" placeholder="Filtrar interface...">
-            </div>
-            <div class="col-md-1">
-                <label class="form-label fw-semibold">ID</label>
-                <input type="text" class="form-control form-control-sm filter-input" 
-                       id="filter-id" placeholder="ID...">
-            </div>
-            <div class="col-md-1">
-                <label class="form-label fw-semibold">Estado</label>
-                <select class="form-select form-select-sm filter-input" id="filter-estado">
-                    <option value="">Todos</option>
-                    <option value="Up">Up</option>
-                    <option value="Down">Down</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label fw-semibold">Serial Number</label>
-                <input type="text" class="form-control form-control-sm filter-input" 
-                       id="filter-serial" placeholder="Serial...">
-            </div>
-            <div class="col-md-1">
-                <label class="form-label fw-semibold">Active FW</label>
-                <input type="text" class="form-control form-control-sm filter-input" 
-                       id="filter-active-fw" placeholder="versão atual...">
-            </div>
-            <div class="col-md-1">
-                <label class="form-label fw-semibold">Standby FW</label>
-                <input type="text" class="form-control form-control-sm filter-input" 
-                       id="filter-standby-fw" placeholder="em espera...">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label fw-semibold">Equipamento</label>
-                <input type="text" class="form-control form-control-sm filter-input" 
-                       id="filter-equipamento" placeholder="Equipamento...">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label fw-semibold">OLT</label>
-                <input type="text" class="form-control form-control-sm filter-input" 
-                       id="filter-olt" placeholder="OLT...">
-            </div>
-        </div>
-        <div class="row mt-2">
-            <div class="col-12">
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="clearFilters">
-                    <i class="fas fa-times me-1"></i>Limpar Filtros
-                </button>
-                <span class="ms-3 text-muted" id="resultCount">
-                    Mostrando <span id="visibleRows">{{ onus_data|length }}</span> de {{ onus_data|length }} ONUs
-                </span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Tabela - ATUALIZAR -->
-<div class="table-responsive">
-    <table class="table table-striped table-hover" id="onusTable">
-        <thead class="table-dark">
-            <tr>
-                <th>
-                    <input type="checkbox" id="selectAll" class="form-check-input">
-                    <label for="selectAll" class="form-check-label ms-1">Todos</label>
-                </th>
-                <th>Interface</th>
-                <th>ID</th>
-                <th>Estado</th>
-                <th>Serial Number</th>
-                <th>Firmware Active</th>
-                <th>Firmware Standby</th>
-                <th>Equipamento</th>
-                <th>OLT</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for onu in onus_data %}
-            <tr class="onu-row" 
-                data-interface="{{ onu.interface }}"
-                data-id="{{ onu.onu_id }}"
-                data-estado="{{ onu.oper_state }}"
-                data-serial="{{ onu.serial_number }}"
-                data-active-fw="{{ onu.active_fw }}"
-                data-standby-fw="{{ onu.standby_fw }}"
-                data-equipamento="{{ onu.eq_id }}"
-                data-olt="{{ onu.hostname }}">
-                <td>
-                    <input type="checkbox" 
-                           class="form-check-input onu-checkbox" 
-                           data-chassis="{{ onu.chassis }}"
-                           data-slot="{{ onu.slot }}"
-                           data-port="{{ onu.port }}"
-                           data-onu-id="{{ onu.onu_id }}"
-                           data-interface="{{ onu.interface }}"
-                           data-serial="{{ onu.serial_number }}"
-                           data-active-fw="{{ onu.active_fw }}"
-                           data-standby-fw="{{ onu.standby_fw }}"
-                           data-eq-id="{{ onu.eq_id }}"
-                           data-hostname="{{ onu.hostname }}">
-                </td>
-                <td>{{ onu.interface }}</td>
-                <td>{{ onu.onu_id }}</td>
-                <td>
-                    <span class="badge {% if onu.oper_state == 'Up' %}bg-success{% else %}bg-danger{% endif %}">
-                        {{ onu.oper_state }}
-                    </span>
-                </td>
-                <td>{{ onu.serial_number }}</td>
-                <td>{{ onu.active_fw }}</td>
-                <td>{{ onu.standby_fw }}</td>
-                <td>{{ onu.eq_id }}</td>
-                <td>{{ onu.hostname }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-    <div class="mt-3">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-eye me-2"></i>Preview dos Comandos</h5>
-            </div>
-            <div class="card-body">
-                <pre id="commandsPreview" class="bg-light p-3 rounded">Selecione ONUs para ver os comandos que serão executados...</pre>
-            </div>
-        </div>
-    </div>
-
-    {{ form.selected_onus() }}
-
-    <div class="mt-3">
-        <button type="button" class="btn btn-warning" disabled id="updateBtn">
-            <span id="updateBtnText">Requisitar Atualização</span>
-            <span id="updateSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
-        </button>
-    </div>
-
-    {% endif %}
-</form>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    console.log('DEBUG JS: Iniciando script...');
-    
-    // Script para seleção múltipla de OLTs
-    const originalSelectElement = document.querySelector('select[name="hostname"]');
-    const searchInput = document.getElementById('searchInput');
-    const optionsContainer = document.getElementById('optionsContainer');
-    const selectedOltsInput = document.getElementById('selected_olts');
-    const selectedOltsDisplay = document.getElementById('selectedOltsDisplay');
-    const selectedOltsTags = document.getElementById('selectedOltsTags');
-    const selectAllOLTsCheckbox = document.getElementById('selectAllOLTs');
-    const clearOltSelectionBtn = document.getElementById('clearOltSelection');
-
-    let selectedOlts = [];
-    let allOltOptions = [];
-
-    // Debug: verificar se o select original existe
-    console.log('DEBUG JS: Select original encontrado:', originalSelectElement);
-
-    // Obter opções do formulário original
-    if (originalSelectElement) {
-        allOltOptions = Array.from(originalSelectElement.options).slice(1).map(option => ({
-            value: option.value,
-            text: option.text
-        }));
-        console.log('DEBUG JS: Opções carregadas:', allOltOptions.length);
-    } else {
-        console.error('ERROR JS: Select original não encontrado!');
-        return;
-    }
-
-    function createOltOption(option) {
-        const optionDiv = document.createElement('div');
-        optionDiv.className = 'searchable-option p-2 border-bottom olt-option';
-        optionDiv.style.cursor = 'pointer';
-        
-        const safeId = option.value.replace(/[^a-zA-Z0-9]/g, '_');
-        
-        optionDiv.innerHTML = `
-            <div class="form-check">
-                <input class="form-check-input olt-checkbox" type="checkbox" value="${option.value}" id="olt_${safeId}">
-                <label class="form-check-label" for="olt_${safeId}">
-                    ${option.text}
-                </label>
-            </div>
-        `;
-
-        // Adicionar eventos
-        const checkbox = optionDiv.querySelector('.olt-checkbox');
-
-        optionDiv.addEventListener('mouseenter', function() {
-            this.style.backgroundColor = '#f8f9fa';
-        });
-
-        optionDiv.addEventListener('mouseleave', function() {
-            this.style.backgroundColor = 'white';
-        });
-
-        optionDiv.addEventListener('click', function(e) {
-            if (e.target.type !== 'checkbox') {
-                checkbox.checked = !checkbox.checked;
-                updateSelectedOlts();
-            }
-        });
-
-        checkbox.addEventListener('change', updateSelectedOlts);
-
-        return optionDiv;
-    }
-
-    function renderOltOptions(filteredOptions = allOltOptions) {
-        // Limpar opções existentes (exceto "Selecionar Todos")
-        const existingOptions = optionsContainer.querySelectorAll('.olt-option');
-        existingOptions.forEach(option => option.remove());
-
-        // Adicionar opções filtradas
-        filteredOptions.forEach(option => {
-            optionsContainer.appendChild(createOltOption(option));
-        });
-
-        // Atualizar estado do "Selecionar Todos"
-        updateSelectAllOltsState();
-    }
-
-    function filterOltOptions(searchTerm) {
-        const filteredOptions = allOltOptions.filter(option =>
-            option.text.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        renderOltOptions(filteredOptions);
-    }
-
-    function updateSelectedOlts() {
-        const checkedBoxes = optionsContainer.querySelectorAll('.olt-checkbox:checked');
-        selectedOlts = Array.from(checkedBoxes).map(checkbox => ({
-            value: checkbox.value,
-            text: checkbox.nextElementSibling.textContent.trim()
-        }));
-
-        console.log('DEBUG JS: OLTs selecionadas:', selectedOlts);
-
-        // Atualizar campo oculto
-        selectedOltsInput.value = selectedOlts.map(olt => olt.value).join(',');
-        
-        // Para compatibilidade, definir o primeiro valor no select original
-        if (selectedOlts.length > 0) {
-            originalSelectElement.value = selectedOlts[0].value;
-        } else {
-            originalSelectElement.value = '';
-        }
-
-        // Atualizar display visual
-        updateSelectedOltsDisplay();
-        updateSelectAllOltsState();
-        
-        console.log('DEBUG JS: Campo selected_olts:', selectedOltsInput.value);
-        console.log('DEBUG JS: Campo hostname original:', originalSelectElement.value);
-    }
-
-    function updateSelectedOltsDisplay() {
-        if (selectedOlts.length > 0) {
-            selectedOltsDisplay.style.display = 'block';
-            selectedOltsTags.innerHTML = '';
-            
-            selectedOlts.forEach(olt => {
-                const tag = document.createElement('span');
-                tag.className = 'badge bg-primary me-1 mb-1';
-                tag.innerHTML = `
-                    ${olt.text}
-                    <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.7em;" onclick="removeOlt('${olt.value}')"></button>
-                `;
-                selectedOltsTags.appendChild(tag);
-            });
-        } else {
-            selectedOltsDisplay.style.display = 'none';
-        }
-    }
-
-    function updateSelectAllOltsState() {
-        const visibleCheckboxes = optionsContainer.querySelectorAll('.olt-checkbox');
-        const checkedVisible = optionsContainer.querySelectorAll('.olt-checkbox:checked');
-        
-        if (visibleCheckboxes.length === 0) {
-            selectAllOLTsCheckbox.checked = false;
-            selectAllOLTsCheckbox.indeterminate = false;
-        } else {
-            selectAllOLTsCheckbox.checked = checkedVisible.length === visibleCheckboxes.length;
-            selectAllOLTsCheckbox.indeterminate = checkedVisible.length > 0 && checkedVisible.length < visibleCheckboxes.length;
-        }
-    }
-
-    // Função global para remover OLT
-    window.removeOlt = function(oltValue) {
-        const checkbox = optionsContainer.querySelector(`input[value="${oltValue}"]`);
-        if (checkbox) {
-            checkbox.checked = false;
-            updateSelectedOlts();
-        }
-    };
-
-    // Event listeners
-    searchInput.addEventListener('input', function() {
-        const searchTerm = this.value;
-        filterOltOptions(searchTerm);
-        if (searchTerm) {
-            optionsContainer.style.display = 'block';
-        }
-    });
-
-    searchInput.addEventListener('focus', function() {
-        optionsContainer.style.display = 'block';
-    });
-
-    selectAllOLTsCheckbox.addEventListener('change', function() {
-        const visibleCheckboxes = optionsContainer.querySelectorAll('.olt-checkbox');
-        visibleCheckboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
-        });
-        updateSelectedOlts();
-    });
-
-    clearOltSelectionBtn.addEventListener('click', function() {
-        const allCheckboxes = optionsContainer.querySelectorAll('.olt-checkbox');
-        allCheckboxes.forEach(checkbox => {
-            checkbox.checked = false;
-        });
-        searchInput.value = '';
-        updateSelectedOlts();
-        renderOltOptions();
-        optionsContainer.style.display = 'none';
-    });
-
-    document.addEventListener('click', function(e) {
-        if (!document.getElementById('searchable-select-wrapper').contains(e.target)) {
-            optionsContainer.style.display = 'none';
-        }
-    });
-
-    // Inicializar
-    if (allOltOptions.length > 0) {
-        renderOltOptions();
-        console.log('DEBUG JS: Interface inicializada com sucesso');
-    } else {
-        console.error('ERROR JS: Nenhuma opção de OLT encontrada');
-    }
-
-    // Script para filtros da tabela
-    const filterInputs = document.querySelectorAll('.filter-input');
-    const tableRows = document.querySelectorAll('.onu-row');
-    const clearFiltersBtn = document.getElementById('clearFilters');
-    const visibleRowsSpan = document.getElementById('visibleRows');
-    const totalRows = tableRows.length;
-
-function applyFilters() {
-    const filters = {
-        interface: document.getElementById('filter-interface').value.toLowerCase(),
-        id: document.getElementById('filter-id').value.toLowerCase(),
-        estado: document.getElementById('filter-estado').value.toLowerCase(),
-        serial: document.getElementById('filter-serial').value.toLowerCase(),
-        activeFw: document.getElementById('filter-active-fw').value.toLowerCase(),
-        standbyFw: document.getElementById('filter-standby-fw').value.toLowerCase(),
-        equipamento: document.getElementById('filter-equipamento').value.toLowerCase(),
-        olt: document.getElementById('filter-olt').value.toLowerCase()
-    };
-
-    let visibleCount = 0;
-
-    tableRows.forEach(row => {
-        const rowData = {
-            interface: row.dataset.interface.toLowerCase(),
-            id: row.dataset.id.toLowerCase(),
-            estado: row.dataset.estado.toLowerCase(),
-            serial: row.dataset.serial.toLowerCase(),
-            activeFw: row.dataset.activeFw.toLowerCase(),
-            standbyFw: row.dataset.standbyFw.toLowerCase(),
-            equipamento: (row.dataset.equipamento || '').toLowerCase(),
-            olt: (row.dataset.olt || '').toLowerCase()
-        };
-
-        const matchesFilters = 
-            rowData.interface.includes(filters.interface) &&
-            rowData.id.includes(filters.id) &&
-            (filters.estado === '' || rowData.estado === filters.estado) &&
-            rowData.serial.includes(filters.serial) &&
-            rowData.activeFw.includes(filters.activeFw) &&
-            rowData.standbyFw.includes(filters.standbyFw) &&
-            rowData.equipamento.includes(filters.equipamento) &&
-            rowData.olt.includes(filters.olt);
-
-        if (matchesFilters) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-            const checkbox = row.querySelector('.onu-checkbox');
-            if (checkbox) {
-                checkbox.checked = false;
-            }
-        }
-    });
-
-    visibleRowsSpan.textContent = visibleCount;
-    updateSelectAllState();
-    updatePreview();
+<style>
+:root {
+    --background: #f8f9fa;
+    --surface: #ffffff;
+    --text-primary: #212529;
+    --text-secondary: #495057;
+    --text-muted: #868e96;
+    --primary: #495057;
+    --primary-hover: #343a40;
+    --primary-light: #f1f3f5;
+    --primary-text-on-dark: #ffffff;
+    --success: #2f9e44;
+    --success-bg: #e9f9ee;
+    --success-text: #1d602a;
+    --warning: #f08c00;
+    --warning-bg: #fff9db;
+    --warning-text: #a66200;
+    --danger: #e03131;
+    --danger-bg: #fff5f5;
+    --danger-text: #c92a2a;
+    --info: #1971c2;
+    --info-bg: #e7f5ff;
+    --info-text: #1864ab;
+    --border-color: #dee2e6;
+    --border-color-light: #f1f3f5;
+    --radius: 0.5rem;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    --transition: all 0.2s ease-in-out;
 }
 
-    function clearAllFilters() {
-        filterInputs.forEach(input => {
-            input.value = '';
-        });
-        
-        tableRows.forEach(row => {
-            row.style.display = '';
-        });
+* { box-sizing: border-box; }
 
-        visibleRowsSpan.textContent = totalRows;
-        updateSelectAllState();
-        updatePreview();
+body {
+    background: var(--background);
+    color: var(--text-secondary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.main-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+h1, .page-title, .page-title * {
+    background: none !important;
+    background-image: none !important;
+    background-clip: initial !important;
+    -webkit-background-clip: initial !important;
+    -webkit-text-fill-color: #212529 !important;
+    color: #212529 !important;
+    text-shadow: none !important;
+}
+
+.page-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #212529;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface);
+}
+
+.card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.two-column-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .two-column-layout {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
     }
+}
 
-    filterInputs.forEach(input => {
-        input.addEventListener('input', applyFilters);
-        input.addEventListener('change', applyFilters);
-    });
+.form-group {
+    margin-bottom: 1.25rem;
+}
 
-    if (clearFiltersBtn) {
-        clearFiltersBtn.addEventListener('click', clearAllFilters);
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    font-size: 0.875rem;
+    transition: var(--transition);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.form-control::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+    font-style: italic;
+}
+
+.grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 768px) {
+    .grid-cols-4 {
+        grid-template-columns: 1fr;
     }
+}
 
-    // Script para seleção de ONUs e preview
-    const selectAllCheckbox = document.getElementById('selectAll');
-    const updateBtn = document.getElementById('updateBtn');
-    const updateBtnText = document.getElementById('updateBtnText');
-    const updateSpinner = document.getElementById('updateSpinner');
-    const selectedOnusInput = document.querySelector('input[name="selected_onus"]');
-    const firmwareInput = document.querySelector('input[name="firmware_file"]');
-    const commandsPreview = document.getElementById('commandsPreview');
-
-    function getVisibleCheckboxes() {
-        return document.querySelectorAll('.onu-row:not([style*="display: none"]) .onu-checkbox');
+@media (max-width: 1024px) and (min-width: 769px) {
+    .grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr);
     }
+}
 
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', function() {
-            const visibleCheckboxes = getVisibleCheckboxes();
-            visibleCheckboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-            });
-            updatePreview();
-        });
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    border: 2px solid transparent;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition);
+}
 
-        document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('onu-checkbox')) {
-                updateSelectAllState();
-                updatePreview();
-            }
-        });
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
 
-        if (firmwareInput) {
-            firmwareInput.addEventListener('input', updatePreview);
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: var(--primary-text-on-dark);
+    border-color: var(--primary);
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.btn-warning {
+    background: var(--warning);
+    color: var(--primary-text-on-dark);
+    border-color: var(--warning);
+}
+
+.btn-secondary {
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--background);
+    color: var(--text-primary);
+    border-color: var(--primary);
+}
+
+.btn-lg {
+    padding: 1.125rem 2.25rem;
+    font-size: 1rem;
+}
+
+.btn-sm {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.8rem;
+}
+
+.olt-selector {
+    position: relative;
+}
+
+.search-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    font-size: 1rem;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.search-icon {
+    position: absolute;
+    left: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    z-index: 1;
+    font-size: 1rem;
+}
+
+.options-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+    z-index: 2000;
+    background: var(--surface);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+}
+
+.option-item {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color-light);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.option-item:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.option-item:last-child {
+    border-bottom: none;
+}
+
+.option-item .checkbox {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.25rem;
+    background: var(--surface);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.option-item .checkbox:checked {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.option-item label {
+    flex: 1;
+    cursor: pointer;
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.option-item:hover label {
+    color: var(--primary);
+}
+
+.selected-tags-container {
+    margin-top: 1.5rem;
+}
+
+.selected-tags-container .form-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--primary);
+    color: var(--primary-text-on-dark);
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.tag-close {
+    background: none;
+    border: none;
+    color: var(--primary-text-on-dark);
+    cursor: pointer;
+    padding: 0.25rem;
+    margin: -0.25rem;
+    opacity: 0.7;
+    transition: var(--transition);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tag-close:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.stat-icon.primary { background: var(--primary-light); color: var(--primary); }
+.stat-icon.success { background: var(--success-bg); color: var(--success); }
+.stat-icon.warning { background: var(--warning-bg); color: var(--warning); }
+.stat-icon.info { background: var(--info-bg); color: var(--info); }
+
+.stat-content h3 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.stat-content p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.table-container {
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.modern-table th {
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-weight: 600;
+    padding: 0;
+    position: relative;
+    border-bottom: 2px solid var(--border-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+}
+
+.select-col { width: 50px; text-align: center; }
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0.75rem;
+}
+
+.header-content > span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-controls {
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    margin-left: auto;
+}
+
+.filterable-header:hover .header-controls { opacity: 1; }
+
+.filterable-header {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.filterable-header:hover {
+    background: linear-gradient(135deg, var(--background) 0%, var(--primary-light) 100%);
+}
+
+.filter-btn, .sort-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    font-size: 0.875rem;
+}
+
+.filter-btn:hover, .sort-btn:hover { 
+    background: var(--primary-light);
+    color: var(--primary);
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(73, 80, 87, 0.15);
+}
+
+.filter-btn.active, .sort-btn.active { 
+    background: var(--primary);
+    color: var(--primary-text-on-dark);
+    box-shadow: 0 2px 8px rgba(73, 80, 87, 0.25);
+    transform: scale(1.05);
+}
+
+.filter-btn.active:hover, .sort-btn.active:hover {
+    background: var(--primary-hover);
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(73, 80, 87, 0.3);
+}
+
+.filter-btn.active::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background: var(--warning);
+    border-radius: 50%;
+    border: 2px solid var(--surface);
+    animation: pulse 2s infinite;
+}
+
+.sort-btn.active::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 6px;
+    height: 6px;
+    background: var(--success);
+    border-radius: 50%;
+    border: 1px solid var(--surface);
+}
+
+@keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.filter-btn i {
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover i {
+    transform: rotate(5deg);
+}
+
+.filter-btn.active i {
+    transform: rotate(0deg) scale(1.1);
+}
+
+.sort-btn i {
+    transition: all 0.2s ease;
+}
+
+.sort-btn:hover i {
+    transform: translateY(-1px);
+}
+
+.modern-table td {
+    padding: 0.875rem 0.75rem;
+    border-bottom: 1px solid var(--border-color-light);
+    vertical-align: middle;
+    color: var(--text-secondary);
+}
+
+.modern-table tbody tr:last-child td { border-bottom: none; }
+.modern-table tbody tr { transition: var(--transition); }
+.modern-table tbody tr:hover { background: var(--background); }
+
+.checkbox-wrapper { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+.checkbox { 
+    width: 1rem; 
+    height: 1rem; 
+    border: 2px solid var(--border-color); 
+    border-radius: 0.25rem; 
+    background: var(--surface); 
+    cursor: pointer; 
+    transition: var(--transition); 
+}
+
+.checkbox:checked { 
+    background: var(--primary); 
+    border-color: var(--primary); 
+}
+
+.checkbox:focus { 
+    outline: none; 
+    box-shadow: 0 0 0 3px var(--primary-light); 
+}
+
+.badge { 
+    display: inline-flex; 
+    align-items: center; 
+    padding: 0.25rem 0.6rem; 
+    border-radius: 9999px; 
+    font-size: 0.75rem; 
+    font-weight: 600; 
+}
+
+.badge-primary { background: var(--primary-light); color: var(--primary); }
+.badge-secondary { background: var(--background); color: var(--text-secondary); }
+.badge-warning { background: var(--warning-bg); color: var(--warning-text); }
+
+.status-badge { 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 0.5rem; 
+    padding: 0.25rem 0.6rem; 
+    border-radius: 9999px; 
+    font-size: 0.8rem; 
+    font-weight: 600; 
+}
+
+.status-badge::before { 
+    content: '●'; 
+    font-size: 1rem; 
+    line-height: 1; 
+}
+
+.status-online { background: var(--success-bg); color: var(--success-text); }
+.status-online::before { color: var(--success); }
+.status-offline { background: var(--danger-bg); color: var(--danger-text); }
+.status-offline::before { color: var(--danger); }
+
+.mono { 
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; 
+    font-size: 0.8rem; 
+    color: var(--text-primary); 
+}
+
+.fw-medium { font-weight: 500; }
+
+.commands-preview {
+    background: #212529;
+    color: #ced4da;
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    padding: 1.5rem;
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 0;
+    border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.spinner { 
+    display: inline-block; 
+    width: 1rem; 
+    height: 1rem; 
+    border: 2px solid transparent; 
+    border-top: 2px solid currentColor; 
+    border-radius: 50%; 
+    animation: spin 1s linear infinite; 
+}
+
+@keyframes spin { 
+    0% { transform: rotate(0deg); } 
+    100% { transform: rotate(360deg); } 
+}
+
+.filter-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    min-width: 300px;
+    max-height: 400px;
+    overflow: visible;
+    display: none;
+}
+
+.filter-header { 
+    padding: 0.75rem; 
+    border-bottom: 1px solid var(--border-color); 
+}
+
+.filter-search { 
+    width: 100%; 
+    padding: 0.5rem; 
+    border: 1px solid var(--border-color); 
+    border-radius: 0.25rem; 
+    font-size: 0.875rem; 
+}
+
+.filter-options { 
+    max-height: 250px; 
+    overflow-y: auto; 
+}
+
+.filter-option { 
+    padding: 0.75rem 1rem; 
+    cursor: pointer; 
+    transition: var(--transition); 
+    border-bottom: 1px solid var(--border-color-light); 
+    display: flex; 
+    gap: 0.75rem; 
+}
+
+.filter-option:hover { background: var(--background); }
+.filter-option:last-child { border-bottom: none; }
+
+.filter-actions { 
+    padding: 0.75rem; 
+    border-top: 1px solid var(--border-color); 
+    display: flex; 
+    gap: 0.75rem; 
+    background: var(--background); 
+}
+
+.filter-actions .btn { 
+    flex: 1; 
+    justify-content: center; 
+}
+
+.alert-floating { 
+    position: fixed; 
+    top: 1rem; 
+    right: 1rem; 
+    z-index: 9999; 
+    min-width: 350px; 
+    max-width: 500px; 
+    animation: slideIn 0.3s ease-out; 
+}
+
+@keyframes slideIn { 
+    from { transform: translateX(100%); opacity: 0; } 
+    to { transform: translateX(0); opacity: 1; } 
+}
+
+.alert { 
+    padding: 1rem 1.5rem; 
+    border-radius: var(--radius); 
+    border: 1px solid transparent; 
+    margin-bottom: 1rem; 
+    display: flex; 
+    align-items: center; 
+    gap: 1rem; 
+    box-shadow: var(--shadow-lg); 
+}
+
+.alert-success { 
+    background: var(--success-bg); 
+    color: var(--success-text); 
+    border-color: var(--success); 
+}
+
+.alert-danger { 
+    background: var(--danger-bg); 
+    color: var(--danger-text); 
+    border-color: var(--danger); 
+}
+
+.alert-close { 
+    background: none; 
+    border: none; 
+    color: inherit; 
+    cursor: pointer; 
+    padding: 0; 
+    margin-left: auto; 
+    opacity: 0.7; 
+    transition: var(--transition); 
+}
+
+.alert-close:hover { opacity: 1; }
+
+.dropdown-overlay { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    background: rgba(0, 0, 0, 0.4); 
+    z-index: 1999; 
+    display: none; 
+}
+
+.dropdown-overlay.show { display: block; }
+
+@media (max-width: 1024px) {
+    .filter-dropdown,
+    .options-dropdown {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%);
+        width: 90vw;
+        max-width: 500px;
+        border-radius: var(--radius);
+        z-index: 2000;
+    }
+    
+    .header-controls {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .modern-table { font-size: 0.8rem; }
+    .modern-table th, .modern-table td { padding: 0.75rem 0.5rem; }
+}
+
+/* Correção para sobrescrever estilos do base.html */
+.filter-btn, .sort-btn {
+    background: rgba(248, 250, 252, 0.9) !important;
+    border: 1px solid rgba(203, 213, 225, 0.8) !important;
+    color: #475569 !important;
+    padding: 0.5rem !important;
+    border-radius: 0.375rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    font-size: 0.875rem !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.filter-btn:hover, .sort-btn:hover { 
+    background: rgba(64, 224, 208, 0.1) !important;
+    color: #40E0D0 !important;
+    border-color: #40E0D0 !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 8px rgba(64, 224, 208, 0.2) !important;
+}
+
+.filter-btn.active, .sort-btn.active { 
+    background: #40E0D0 !important;
+    color: white !important;
+    border-color: #40E0D0 !important;
+    box-shadow: 0 4px 12px rgba(64, 224, 208, 0.3) !important;
+    transform: scale(1.02) !important;
+}
+
+.filter-btn.active:hover, .sort-btn.active:hover {
+    background: #36d3bb !important;
+    border-color: #36d3bb !important;
+    transform: scale(1.08) !important;
+    box-shadow: 0 6px 16px rgba(64, 224, 208, 0.4) !important;
+}
+
+/* Manter os indicadores visuais */
+.filter-btn.active::after {
+    content: '' !important;
+    position: absolute !important;
+    top: -2px !important;
+    right: -2px !important;
+    width: 8px !important;
+    height: 8px !important;
+    background: #f08c00 !important;
+    border-radius: 50% !important;
+    border: 2px solid white !important;
+    animation: pulse 2s infinite !important;
+}
+
+.sort-btn.active::after {
+    content: '' !important;
+    position: absolute !important;
+    top: -2px !important;
+    right: -2px !important;
+    width: 6px !important;
+    height: 6px !important;
+    background: #2f9e44 !important;
+    border-radius: 50% !important;
+    border: 1px solid white !important;
+}
+
+/* Garantir que os ícones sejam visíveis */
+.filter-btn i, .sort-btn i {
+    color: inherit !important;
+    font-size: 0.875rem !important;
+}
+
+/* Correção para o header das colunas */
+.filterable-header:hover {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(64, 224, 208, 0.1) 100%) !important;
+}
+
+.header-controls {
+    display: flex !important;
+    gap: 0.25rem !important;
+    opacity: 0.6 !important;
+    transition: all 0.2s ease !important;
+    margin-left: auto !important;
+}
+
+.filterable-header:hover .header-controls { 
+    opacity: 1 !important; 
+}
+
+
+
+
+</style>
+
+<div class="main-container">
+    <div class="page-header">
+        <h1 class="page-title">Atualização de ONUs por GPON</h1>
+    </div>
+
+    <form method="POST" action="{{url_for('att_onus_gpon_bp.att_onus_gpon')}}" id="mainForm">
+        {{ form.hidden_tag() }}
+
+        <!-- Layout em duas colunas -->
+        <div class="two-column-layout">
+            <!-- Seleção de OLTs -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-server"></i>
+                        Seleção de OLTs
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="olt-selector" id="oltSelector">
+                        {{ form.hostname(style="display: none;") }}
+                        {{ form.selected_olts(id="selected_olts", style="display: none;") }}
+
+                        <div class="form-group" style="position: relative;">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" class="search-input form-control" id="searchInput"
+                                   placeholder="Digite para buscar OLTs...">
+                        </div>
+
+                        <div class="options-dropdown" id="optionsDropdown"></div>
+
+                        <div id="selectedTags" class="selected-tags-container" style="display: none;">
+                            <label class="form-label">OLTs Selecionadas:</label>
+                            <div class="tag-list" id="tagsContainer"></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <button type="button" class="btn btn-secondary btn-sm" id="clearSelection">
+                            <i class="fas fa-times"></i>
+                            Limpar Seleção
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parâmetros GPON -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-cog"></i>
+                        Parâmetros GPON (?/?/?)
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-cols-4">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.chassis.id }}">
+                                <i class="fas fa-server"></i> {{ form.chassis.label.text }}
+                            </label>
+                            {{ form.chassis(class="form-control", placeholder="Ex: 1") }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.slot.id }}">
+                                <i class="fas fa-microchip"></i> {{ form.slot.label.text }}
+                            </label>
+                            {{ form.slot(class="form-control", placeholder="Ex: 1") }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.port_id.id }}">
+                                <i class="fas fa-ethernet"></i> {{ form.port_id.label.text }}
+                            </label>
+                            {{ form.port_id(class="form-control", placeholder="Ex: 1") }}
+                        </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.firmware_file.id }}">
+                                <i class="fas fa-file-code"></i> {{ form.firmware_file.label.text }}
+                            </label>
+                            {{ form.firmware_file(class="form-control", placeholder="fulano-v2.bin") }}
+                            <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem; display: block;">
+                                <i class="fas fa-terminal"></i> show firmware onu | tab (copie e cole corretamente o nome do arquivo)
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buscar ONUs -->
+        <div style="text-align: center; margin: 2rem 0;">
+            {{ form.submit_get_info(class="btn btn-primary btn-lg") }}
+            <div style="margin-top: 0.75rem;">
+                <small style="color: var(--text-secondary);">
+                    <i class="fas fa-clock"></i>
+                    <strong>Tempo estimado:</strong> até 40 minutos dependendo da quantidade
+                </small>
+            </div>
+        </div>
+
+        {% if show_table and onus_data %}
+        <!-- Estatísticas -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon primary">
+                    <i class="fas fa-list"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalOnus">{{ onus_data|length }}</h3>
+                    <p>Total de ONUs</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon info">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="visibleOnus">{{ onus_data|length }}</h3>
+                    <p>ONUs Visíveis</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon success">
+                    <i class="fas fa-check-square"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="selectedOnus">0</h3>
+                    <p>ONUs Selecionadas</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon warning">
+                    <i class="fas fa-filter"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="activeFilters">0</h3>
+                    <p>Filtros Ativos</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de ONUs -->
+        <div class="card">
+            <div class="table-container">
+                <table class="modern-table" id="onusTable">
+                    <thead>
+                        <tr>
+                            <th class="select-col">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" id="selectAll" class="checkbox">
+                                </div>
+                            </th>
+                            <th class="filterable-header" data-column="interface">
+                                <div class="header-content">
+                                    <span><i class="fas fa-network-wired"></i> Interface</span>
+                                    <div class="header-controls">
+                                        <button type="button" class="filter-btn" title="Filtrar"><i class="fas fa-filter"></i></button>
+                                        <button type="button" class="sort-btn" title="Ordenar"><i class="fas fa-sort"></i></button>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-interface"></div>
+                            </th>
+                            <th class="filterable-header" data-column="id">
+                                <div class="header-content">
+                                    <span><i class="fas fa-hashtag"></i> ID</span>
+                                    <div class="header-controls">
+                                        <button type="button" class="filter-btn"><i class="fas fa-filter"></i></button>
+                                        <button type="button" class="sort-btn"><i class="fas fa-sort"></i></button>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-id"></div>
+                            </th>
+                            <th class="filterable-header" data-column="estado">
+                                <div class="header-content">
+                                    <span><i class="fas fa-signal"></i> Estado</span>
+                                    <div class="header-controls">
+                                        <button type="button" class="filter-btn"><i class="fas fa-filter"></i></button>
+                                        <button type="button" class="sort-btn"><i class="fas fa-sort"></i></button>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-estado"></div>
+                            </th>
+                            <th class="filterable-header" data-column="serial">
+                                <div class="header-content">
+                                    <span><i class="fas fa-barcode"></i> Serial</span>
+                                    <div class="header-controls">
+                                        <button type="button" class="filter-btn"><i class="fas fa-filter"></i></button>
+                                        <button type="button" class="sort-btn"><i class="fas fa-sort"></i></button>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-serial"></div>
+                            </th>
+                            <th class="filterable-header" data-column="active-fw">
+                                <div class="header-content">
+                                    <span><i class="fas fa-microchip"></i> FW Ativo</span>
+                                    <div class="header-controls">
+                                        <button type="button" class="filter-btn"><i class="fas fa-filter"></i></button>
+                                        <button type="button" class="sort-btn"><i class="fas fa-sort"></i></button>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-active-fw"></div>
+                            </th>
+                            <th class="filterable-header" data-column="standby-fw">
+                                <div class="header-content">
+                                    <span><i class="fas fa-pause-circle"></i> FW Standby</span>
+                                    <div class="header-controls">
+                                        <button type="button" class="filter-btn"><i class="fas fa-filter"></i></button>
+                                        <button type="button" class="sort-btn"><i class="fas fa-sort"></i></button>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-standby-fw"></div>
+                            </th>
+                            <th class="filterable-header" data-column="equipamento">
+                                <div class="header-content">
+                                    <span><i class="fas fa-cube"></i> Equipamento</span>
+                                    <div class="header-controls">
+                                        <button type="button" class="filter-btn"><i class="fas fa-filter"></i></button>
+                                        <button type="button" class="sort-btn"><i class="fas fa-sort"></i></button>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-equipamento"></div>
+                            </th>
+                            <th class="filterable-header" data-column="olt">
+                                <div class="header-content">
+                                    <span><i class="fas fa-server"></i> OLT</span>
+                                    <div class="header-controls">
+                                        <button type="button" class="filter-btn"><i class="fas fa-filter"></i></button>
+                                        <button type="button" class="sort-btn"><i class="fas fa-sort"></i></button>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-olt"></div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for onu in onus_data %}
+                        <tr class="onu-row"
+                            data-interface="{{ onu.interface }}"
+                            data-id="{{ onu.onu_id }}"
+                            data-estado="{{ onu.oper_state }}"
+                            data-serial="{{ onu.serial_number }}"
+                            data-active-fw="{{ onu.active_fw }}"
+                            data-standby-fw="{{ onu.standby_fw }}"
+                            data-equipamento="{{ onu.eq_id }}"
+                            data-olt="{{ onu.hostname }}">
+                            <td>
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox"
+                                           class="checkbox onu-checkbox"
+                                           data-chassis="{{ onu.chassis }}"
+                                           data-slot="{{ onu.slot }}"
+                                           data-port="{{ onu.port }}"
+                                           data-onu-id="{{ onu.onu_id }}"
+                                           data-interface="{{ onu.interface }}"
+                                           data-serial="{{ onu.serial_number }}"
+                                           data-active-fw="{{ onu.active_fw }}"
+                                           data-standby-fw="{{ onu.standby_fw }}"
+                                           data-eq-id="{{ onu.eq_id }}"
+                                           data-hostname="{{ onu.hostname }}">
+                                </div>
+                            </td>
+                            <td class="mono">{{ onu.interface }}</td>
+                            <td><span class="badge badge-secondary">{{ onu.onu_id }}</span></td>
+                            <td>
+                                <span class="status-badge {% if onu.oper_state == 'Up' %}status-online{% else %}status-offline{% endif %}">
+                                    {{ onu.oper_state }}
+                                </span>
+                            </td>
+                            <td class="mono">{{ onu.serial_number }}</td>
+                            <td><span class="badge badge-primary">{{ onu.active_fw }}</span></td>
+                            <td><span class="badge badge-warning">{{ onu.standby_fw }}</span></td>
+                            <td>{{ onu.eq_id }}</td>
+                            <td class="fw-medium">{{ onu.hostname }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Preview de Comandos -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-terminal"></i>
+                    Preview dos Comandos
+                    <small id="commandCount" style="color: var(--text-muted); font-weight: normal; margin-left: 0.5rem;">(0 comandos)</small>
+                </h2>
+            </div>
+            <div class="commands-preview" id="commandsPreview">
+Selecione ONUs para visualizar os comandos que serão executados...
+            </div>
+        </div>
+
+        {{ form.selected_onus(style="display: none;") }}
+
+        <!-- Botão de Atualização -->
+        <div style="text-align: center; margin: 2rem 0;">
+            <button type="button" class="btn btn-warning btn-lg" disabled id="updateBtn">
+                <i class="fas fa-download"></i>
+                <span id="updateBtnText">Requisitar Atualização</span>
+                <span id="updateSpinner" class="spinner" style="display: none;"></span>
+            </button>
+        </div>
+
+        {% endif %}
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const debounce = (func, wait) => {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    };
+
+    class OLTSelector {
+        constructor() {
+            this.originalSelect = document.querySelector('select[name="hostname"]');
+            this.searchInput = document.getElementById('searchInput');
+            this.dropdown = document.getElementById('optionsDropdown');
+            this.selectedOltsInput = document.getElementById('selected_olts');
+            this.selectedTagsContainer = document.getElementById('selectedTags');
+            this.tagsContainer = document.getElementById('tagsContainer');
+            this.clearBtn = document.getElementById('clearSelection');
+            this.parentCard = this.searchInput ? this.searchInput.closest('.card') : null;
+
+            this.selectedOlts = [];
+            this.allOptions = [];
+            this.isOpen = false;
+
+            this.init();
         }
 
-        function updateSelectAllState() {
-            const visibleCheckboxes = getVisibleCheckboxes();
-            const checkedVisible = document.querySelectorAll('.onu-row:not([style*="display: none"]) .onu-checkbox:checked');
+        init() {
+            if (!this.originalSelect) return;
+
+            this.allOptions = Array.from(this.originalSelect.options)
+                .slice(1)
+                .map(option => ({
+                    value: option.value,
+                    text: option.text
+                }));
+
+            this.bindEvents();
+            this.createOverlay();
+        }
+
+        createOverlay() {
+            if (!document.getElementById('dropdownOverlay')) {
+                const overlay = document.createElement('div');
+                overlay.className = 'dropdown-overlay';
+                overlay.id = 'dropdownOverlay';
+                overlay.addEventListener('click', () => this.hideDropdown());
+                document.body.appendChild(overlay);
+            }
+        }
+
+        bindEvents() {
+            this.searchInput.addEventListener('input', debounce((e) => {
+                this.filterOptions(e.target.value);
+                if (!this.isOpen) this.showDropdown();
+            }, 300));
+
+            this.searchInput.addEventListener('focus', () => this.showDropdown());
             
-            if (visibleCheckboxes.length === 0) {
+            document.addEventListener('click', (e) => {
+                const container = this.searchInput.closest('.olt-selector');
+                if (container && !container.contains(e.target) && this.isOpen) {
+                    this.hideDropdown();
+                }
+            });
+
+            this.clearBtn.addEventListener('click', () => this.clearSelection());
+        }
+
+        createOption(option, hasSelectAll = false) {
+            const div = document.createElement('div');
+            div.className = 'option-item';
+
+            if (hasSelectAll) {
+                div.innerHTML = `
+                    <input type="checkbox" class="checkbox" id="selectAllOLTs">
+                    <label for="selectAllOLTs" style="font-weight: 600;">
+                        <i class="fas fa-check-double" style="margin-right: 0.5rem;"></i>
+                        Selecionar Todos Visíveis
+                    </label>
+                `;
+                div.querySelector('.checkbox').addEventListener('change', (e) => {
+                    this.toggleAllVisible(e.target.checked);
+                });
+            } else {
+                const safeId = option.value.replace(/[^a-zA-Z0-9]/g, '_');
+                div.innerHTML = `
+                    <input type="checkbox" class="checkbox" value="${option.value}" id="olt_${safeId}">
+                    <label for="olt_${safeId}">${option.text}</label>
+                `;
+                div.querySelector('.checkbox').checked = this.selectedOlts.some(olt => olt.value === option.value);
+            }
+
+            div.addEventListener('click', (e) => {
+                if (e.target.type !== 'checkbox' && e.target.tagName !== 'LABEL') {
+                    const checkbox = div.querySelector('.checkbox');
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+                this.updateSelection();
+            });
+
+            return div;
+        }
+
+        renderOptions(filteredOptions = this.allOptions) {
+            this.dropdown.innerHTML = '';
+            if (filteredOptions.length === 0) {
+                this.dropdown.innerHTML = '<div class="option-item" style="color: var(--text-muted); font-style: italic; justify-content: center;">Nenhuma OLT encontrada</div>';
+                return;
+            }
+            if (filteredOptions.length > 1) {
+                this.dropdown.appendChild(this.createOption(null, true));
+            }
+            filteredOptions.forEach(option => {
+                this.dropdown.appendChild(this.createOption(option));
+            });
+            this.updateSelectAllState();
+        }
+
+        filterOptions(searchTerm) {
+            const filtered = this.allOptions.filter(option =>
+                option.text.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            this.renderOptions(filtered);
+        }
+
+        showDropdown() {
+            if (this.isOpen) return;
+
+            if (this.parentCard) {
+                this.parentCard.style.overflow = 'visible';
+            }
+
+            this.renderOptions(this.allOptions.filter(option =>
+                option.text.toLowerCase().includes(this.searchInput.value.toLowerCase())
+            ));
+            this.dropdown.style.display = 'block';
+            this.isOpen = true;
+            if (window.innerWidth <= 1024) {
+                document.getElementById('dropdownOverlay').classList.add('show');
+            }
+        }
+
+        hideDropdown() {
+            if (this.parentCard) {
+                this.parentCard.style.overflow = '';
+            }
+            this.dropdown.style.display = 'none';
+            this.isOpen = false;
+            const overlay = document.getElementById('dropdownOverlay');
+            if (overlay) overlay.classList.remove('show');
+        }
+
+        updateSelection() {
+            const checkedBoxes = Array.from(this.dropdown.querySelectorAll('.option-item .checkbox:checked:not(#selectAllOLTs)'));
+            this.selectedOlts = checkedBoxes.map(cb => {
+                return { value: cb.value, text: cb.nextElementSibling.textContent.trim() };
+            });
+
+            this.selectedOltsInput.value = this.selectedOlts.map(olt => olt.value).join(',');
+            this.originalSelect.value = this.selectedOlts.length > 0 ? this.selectedOlts[0].value : '';
+
+            this.updateDisplay();
+            this.updateSelectAllState();
+        }
+
+        updateDisplay() {
+            if (this.selectedOlts.length > 0) {
+                this.selectedTagsContainer.style.display = 'block';
+                this.tagsContainer.innerHTML = '';
+                this.selectedOlts.forEach(olt => {
+                    const tag = document.createElement('span');
+                    tag.className = 'tag';
+                    tag.innerHTML = `
+                        ${olt.text}
+                        <button type="button" class="tag-close" data-value="${olt.value}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    this.tagsContainer.appendChild(tag);
+                    
+                    tag.querySelector('.tag-close').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.removeOlt(e.currentTarget.dataset.value);
+                    });
+                });
+            } else {
+                this.selectedTagsContainer.style.display = 'none';
+            }
+        }
+        
+        removeOlt(oltValue) {
+            this.selectedOlts = this.selectedOlts.filter(olt => olt.value !== oltValue);
+            this.selectedOltsInput.value = this.selectedOlts.map(olt => olt.value).join(',');
+            this.originalSelect.value = this.selectedOlts.length > 0 ? this.selectedOlts[0].value : '';
+            this.updateDisplay();
+            
+            if (this.isOpen) {
+                const checkbox = this.dropdown.querySelector(`input[value="${oltValue}"]`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+                this.updateSelectAllState();
+            }
+        }
+
+        updateSelectAllState() {
+            const selectAllCheckbox = this.dropdown.querySelector('#selectAllOLTs');
+            if (!selectAllCheckbox) return;
+
+            const visibleCheckboxes = this.dropdown.querySelectorAll('.option-item:not(:has(#selectAllOLTs)) .checkbox');
+            const checkedVisible = Array.from(visibleCheckboxes).filter(cb => cb.checked).length;
+            
+            if (visibleCheckboxes.length > 0) {
+                selectAllCheckbox.checked = checkedVisible === visibleCheckboxes.length;
+                selectAllCheckbox.indeterminate = checkedVisible > 0 && checkedVisible < visibleCheckboxes.length;
+            } else {
                 selectAllCheckbox.checked = false;
                 selectAllCheckbox.indeterminate = false;
-            } else {
-                selectAllCheckbox.checked = checkedVisible.length === visibleCheckboxes.length;
-                selectAllCheckbox.indeterminate = checkedVisible.length > 0 && checkedVisible.length < visibleCheckboxes.length;
             }
         }
 
-        function updatePreview() {
-            const selectedCheckboxes = document.querySelectorAll('.onu-checkbox:checked');
-            const firmwareFile = firmwareInput ? firmwareInput.value : '';
+        toggleAllVisible(checked) {
+            this.dropdown.querySelectorAll('.option-item:not(:has(#selectAllOLTs)) .checkbox').forEach(checkbox => {
+                checkbox.checked = checked;
+            });
+            this.updateSelection();
+        }
+
+        clearSelection() {
+            this.selectedOlts = [];
+            this.searchInput.value = '';
+            this.selectedOltsInput.value = '';
+            this.originalSelect.value = '';
+            this.updateDisplay();
+            if (this.isOpen) {
+                this.renderOptions();
+            }
+            this.hideDropdown();
+        }
+    }
+
+    class TableFilter {
+        constructor() {
+            this.tableRows = document.querySelectorAll('.onu-row');
+            this.headers = document.querySelectorAll('.filterable-header');
+            this.activeFilters = {};
+            this.sortState = {};
+            this.visibleCount = document.getElementById('visibleOnus');
+            this.activeFiltersCount = document.getElementById('activeFilters');
+            this.totalRows = this.tableRows.length;
+            this.currentOpenDropdown = null;
+
+            this.init();
+        }
+
+        init() {
+            this.bindEvents();
+            this.updateStats();
+        }
+
+        bindEvents() {
+            this.headers.forEach(header => {
+                const filterBtn = header.querySelector('.filter-btn');
+                const sortBtn = header.querySelector('.sort-btn');
+                const column = header.dataset.column;
+
+                if (filterBtn) {
+                    filterBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.toggleFilterDropdown(column, header);
+                    });
+                }
+
+                if (sortBtn) {
+                    sortBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.toggleSort(column);
+                    });
+                }
+            });
+
+            document.addEventListener('click', () => {
+                this.closeAllDropdowns();
+            });
+        }
+
+        toggleFilterDropdown(column, headerElement) {
+            if (this.currentOpenDropdown && this.currentOpenDropdown !== column) {
+                this.closeAllDropdowns();
+            }
+
+            const dropdown = document.getElementById(`filter-${column}`);
+            if (!dropdown) return;
+
+            if (dropdown.style.display === 'block') {
+                this.closeAllDropdowns();
+                return;
+            }
+
+            this.createFilterDropdown(column, dropdown);
+            dropdown.style.display = 'block';
+            this.currentOpenDropdown = column;
+            headerElement.querySelector('.filter-btn').classList.add('active');
+        }
+
+        createFilterDropdown(column, dropdown) {
+            const values = new Set();
+            this.tableRows.forEach(row => {
+                const value = this.getRowValue(row, column);
+                if (value && value.trim() !== '') values.add(value);
+            });
+
+            const sortedValues = Array.from(values).sort();
+            const currentActiveFilters = this.activeFilters[column] || [];
+
+            dropdown.innerHTML = `
+                <div class="filter-header">
+                    <input type="text" class="filter-search" placeholder="Buscar valores..." data-column="${column}">
+                </div>
+                <div class="filter-options">
+                    <div class="filter-option select-all-option" data-column="${column}">
+                        <input type="checkbox" class="checkbox" ${currentActiveFilters.length === 0 ? 'checked' : ''}>
+                        <strong>(Todos)</strong>
+                    </div>
+                    ${sortedValues.map(value => `
+                        <div class="filter-option" data-column="${column}" data-value="${value}">
+                            <input type="checkbox" class="checkbox" ${currentActiveFilters.length === 0 || currentActiveFilters.includes(value) ? 'checked' : ''}>
+                            <span>${this.formatValue(column, value)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="filter-actions">
+                    <button type="button" class="btn btn-primary btn-sm apply-filter-btn" data-column="${column}">
+                        Aplicar
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm clear-filter-btn" data-column="${column}">
+                        Limpar
+                    </button>
+                </div>
+            `;
+
+            this.bindDropdownEvents(dropdown, column);
+        }
+
+        bindDropdownEvents(dropdown, column) {
+            const searchInput = dropdown.querySelector('.filter-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    this.filterDropdownOptions(dropdown, e.target.value);
+                });
+            }
+
+            dropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                const option = e.target.closest('.filter-option');
+                if (option) {
+                    const checkbox = option.querySelector('.checkbox');
+
+                    if (e.target.type !== 'checkbox') {
+                        checkbox.checked = !checkbox.checked;
+                    }
+
+                    if (option.classList.contains('select-all-option')) {
+                        const allCheckboxes = dropdown.querySelectorAll('.filter-options .filter-option:not(.select-all-option) .checkbox');
+                        allCheckboxes.forEach(cb => cb.checked = checkbox.checked);
+                    }
+                    this.updateSelectAllState(dropdown);
+                }
+            });
+
+            const applyBtn = dropdown.querySelector('.apply-filter-btn');
+            const clearBtn = dropdown.querySelector('.clear-filter-btn');
+
+            if (applyBtn) {
+                applyBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.applyColumnFilter(column, dropdown);
+                });
+            }
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.clearColumnFilter(column, dropdown);
+                });
+            }
+        }
+
+        filterDropdownOptions(dropdown, searchTerm) {
+            const options = dropdown.querySelectorAll('.filter-option:not(.select-all-option)');
+            options.forEach(option => {
+                const text = option.textContent.toLowerCase();
+                option.style.display = text.includes(searchTerm.toLowerCase()) ? 'flex' : 'none';
+            });
+        }
+
+        updateSelectAllState(dropdown) {
+            const allOptions = dropdown.querySelectorAll('.filter-options .filter-option:not(.select-all-option)');
+            const visibleOptions = Array.from(allOptions).filter(option => option.style.display !== 'none');
+            const checkedVisible = visibleOptions.filter(option => option.querySelector('.checkbox').checked);
+            const selectAllCheckbox = dropdown.querySelector('.select-all-option .checkbox');
+
+            if (!selectAllCheckbox) return;
+
+            if (visibleOptions.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else if (checkedVisible.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else if (checkedVisible.length === visibleOptions.length) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+
+        applyColumnFilter(column, dropdown) {
+            const checkedOptions = dropdown.querySelectorAll('.filter-option:not(.select-all-option) .checkbox:checked');
+            const selectedValues = Array.from(checkedOptions).map(cb =>
+                cb.closest('.filter-option').dataset.value
+            );
+            const totalOptions = dropdown.querySelectorAll('.filter-option:not(.select-all-option)').length;
+
+            if (selectedValues.length === 0 || selectedValues.length === totalOptions) {
+                delete this.activeFilters[column];
+            } else {
+                this.activeFilters[column] = selectedValues;
+            }
+
+            this.applyAllFilters();
+            this.closeAllDropdowns();
+            this.updateFilterIndicators();
+        }
+
+        clearColumnFilter(column, dropdown) {
+            const checkboxes = dropdown.querySelectorAll('.filter-options .checkbox');
+            checkboxes.forEach(cb => cb.checked = true);
+            delete this.activeFilters[column];
+
+            this.applyAllFilters();
+            this.closeAllDropdowns();
+            this.updateFilterIndicators();
+        }
+
+        closeAllDropdowns() {
+            document.querySelectorAll('.filter-dropdown').forEach(dropdown => {
+                dropdown.style.display = 'none';
+            });
+
+            this.headers.forEach(header => {
+                const filterBtn = header.querySelector('.filter-btn');
+                if (filterBtn) filterBtn.classList.remove('active');
+            });
+
+            this.currentOpenDropdown = null;
+        }
+
+        applyAllFilters() {
+            let visibleCount = 0;
+
+            this.tableRows.forEach(row => {
+                let visible = true;
+
+                for (const [column, values] of Object.entries(this.activeFilters)) {
+                    const rowValue = this.getRowValue(row, column);
+                    if (!values.includes(rowValue)) {
+                        visible = false;
+                        break;
+                    }
+                }
+
+                if (visible) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                    const checkbox = row.querySelector('.onu-checkbox');
+                    if (checkbox) checkbox.checked = false;
+                }
+            });
+
+            this.visibleCount.textContent = visibleCount;
+            if (window.onuManager) {
+                window.onuManager.updateSelectAllState();
+                window.onuManager.updatePreview();
+            }
+        }
+
+        toggleSort(column) {
+            Object.keys(this.sortState).forEach(col => {
+                if (col !== column) {
+                    delete this.sortState[col];
+                    const header = document.querySelector(`[data-column="${col}"] .sort-btn`);
+                    if (header) {
+                        header.innerHTML = '<i class="fas fa-sort"></i>';
+                        header.classList.remove('active');
+                    }
+                }
+            });
+
+            const currentSort = this.sortState[column] || 'none';
+            let newSort;
+
+            switch (currentSort) {
+                case 'none': newSort = 'asc'; break;
+                case 'asc': newSort = 'desc'; break;
+                case 'desc': newSort = 'none'; break;
+            }
+
+            this.sortState[column] = newSort;
+            this.applySorting(column, newSort);
+            this.updateSortIndicator(column, newSort);
+        }
+
+        applySorting(column, direction) {
+            if (direction === 'none') return;
+
+            const tbody = document.querySelector('#onusTable tbody');
+            const rows = Array.from(this.tableRows);
+
+            rows.sort((a, b) => {
+                const aValue = this.getRowValue(a, column);
+                const bValue = this.getRowValue(b, column);
+                const isNumeric = !isNaN(parseFloat(aValue)) && isFinite(aValue) && !isNaN(parseFloat(bValue)) && isFinite(bValue);
+
+                let comparison = 0;
+                if (isNumeric) {
+                    comparison = parseFloat(aValue) - parseFloat(bValue);
+                } else {
+                    comparison = aValue.localeCompare(bValue, undefined, { sensitivity: 'base' });
+                }
+
+                return direction === 'desc' ? -comparison : comparison;
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        updateSortIndicator(column, direction) {
+            const indicator = document.querySelector(`[data-column="${column}"] .sort-btn`);
+            if (!indicator) return;
+
+            indicator.classList.add('active');
+
+            switch (direction) {
+                case 'asc': indicator.innerHTML = '<i class="fas fa-sort-up"></i>'; break;
+                case 'desc': indicator.innerHTML = '<i class="fas fa-sort-down"></i>'; break;
+                case 'none': indicator.innerHTML = '<i class="fas fa-sort"></i>'; indicator.classList.remove('active'); break;
+            }
+        }
+
+        updateFilterIndicators() {
+            this.headers.forEach(header => {
+                const column = header.dataset.column;
+                const hasFilter = this.activeFilters[column];
+                const filterBtn = header.querySelector('.filter-btn');
+
+                if (hasFilter && filterBtn) {
+                    filterBtn.classList.add('active');
+                } else if (filterBtn) {
+                    filterBtn.classList.remove('active');
+                }
+            });
+
+            this.activeFiltersCount.textContent = Object.keys(this.activeFilters).length;
+        }
+
+        getRowValue(row, column) {
+            const attributeMap = {
+                'interface': 'interface',
+                'id': 'id', 
+                'estado': 'estado',
+                'serial': 'serial',
+                'active-fw': 'activeFw',
+                'standby-fw': 'standbyFw', 
+                'equipamento': 'equipamento',
+                'olt': 'olt'
+            };
             
+            const dataAttribute = attributeMap[column];
+            if (!dataAttribute) {
+                console.warn(`Atributo não mapeado para coluna: ${column}`);
+                return '';
+            }
+            
+            return row.dataset[dataAttribute] || '';
+        }
+
+        formatValue(column, value) {
+            if (column === 'estado') {
+                return value === 'Up' ? '● Online' : '● Offline';
+            }
+            return value;
+        }
+
+        updateStats() {
+            this.visibleCount.textContent = this.totalRows;
+            document.getElementById('totalOnus').textContent = this.totalRows;
+            this.activeFiltersCount.textContent = 0;
+        }
+    }
+
+    class ONUManager {
+        constructor() {
+            this.selectAllCheckbox = document.getElementById('selectAll');
+            this.updateBtn = document.getElementById('updateBtn');
+            this.updateBtnText = document.getElementById('updateBtnText');
+            this.updateSpinner = document.getElementById('updateSpinner');
+            this.selectedOnusInput = document.querySelector('input[name="selected_onus"]');
+            this.firmwareInput = document.querySelector('input[name="firmware_file"]');
+            this.commandsPreview = document.getElementById('commandsPreview');
+            this.commandCount = document.getElementById('commandCount');
+            this.selectedCount = document.getElementById('selectedOnus');
+
+            this.init();
+        }
+
+        init() {
+            this.bindEvents();
+            this.updatePreview();
+            this.updateSelectAllState();
+        }
+
+        bindEvents() {
+            if (this.selectAllCheckbox) {
+                this.selectAllCheckbox.addEventListener('change', (e) => {
+                    this.toggleAllVisible(e.target.checked);
+                });
+            }
+
+            document.addEventListener('change', (e) => {
+                if (e.target.classList.contains('onu-checkbox')) {
+                    this.updateSelectAllState();
+                    this.updatePreview();
+                }
+            });
+
+            if (this.firmwareInput) {
+                this.firmwareInput.addEventListener('input', debounce(() => {
+                    this.updatePreview();
+                }, 300));
+            }
+
+            if (this.updateBtn) {
+                this.updateBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.requestUpdate();
+                });
+            }
+        }
+
+        getVisibleCheckboxes() {
+            return document.querySelectorAll('.onu-row:not([style*="display: none"]) .onu-checkbox');
+        }
+
+        getSelectedCheckboxes() {
+            return document.querySelectorAll('.onu-checkbox:checked');
+        }
+
+        toggleAllVisible(checked) {
+            const visibleCheckboxes = this.getVisibleCheckboxes();
+            visibleCheckboxes.forEach(checkbox => {
+                checkbox.checked = checked;
+            });
+            this.updatePreview();
+        }
+
+        updateSelectAllState() {
+            const visible = this.getVisibleCheckboxes();
+            const checkedVisible = document.querySelectorAll('.onu-row:not([style*="display: none"]) .onu-checkbox:checked');
+
+            if (!this.selectAllCheckbox) return;
+
+            if (visible.length === 0) {
+                this.selectAllCheckbox.checked = false;
+                this.selectAllCheckbox.indeterminate = false;
+            } else {
+                this.selectAllCheckbox.checked = checkedVisible.length === visible.length;
+                this.selectAllCheckbox.indeterminate = checkedVisible.length > 0 && checkedVisible.length < visible.length;
+            }
+        }
+
+        updatePreview() {
+            const selectedCheckboxes = this.getSelectedCheckboxes();
+            const firmwareFile = this.firmwareInput ? this.firmwareInput.value.trim() : '';
+
             let commands = [];
             let selectedOnus = [];
 
             if (selectedCheckboxes.length > 0 && firmwareFile) {
-                // Agrupar comandos por hostname
                 const commandsByHost = {};
-                
+
                 selectedCheckboxes.forEach(checkbox => {
-                    const chassis = checkbox.dataset.chassis;
-                    const slot = checkbox.dataset.slot;
-                    const port = checkbox.dataset.port;
-                    const onuId = checkbox.dataset.onuId;
-                    const hostname = checkbox.dataset.hostname;
-                    
+                    const data = checkbox.dataset;
+                    const hostname = data.hostname;
+
                     if (!commandsByHost[hostname]) {
                         commandsByHost[hostname] = [];
                     }
-                    
-                    commandsByHost[hostname].push(`request firmware onu install ${firmwareFile} interface gpon ${chassis}/${slot}/${port} onu ${onuId}`);
-                    
+
+                    commandsByHost[hostname].push(
+                        `request firmware onu install ${firmwareFile} interface gpon ${data.chassis}/${data.slot}/${data.port} onu ${data.onuId}`
+                    );
+
                     selectedOnus.push({
                         hostname: hostname,
-                        chassis: chassis,
-                        slot: slot,
-                        port: port,
-                        onu_id: onuId,
-                        interface: checkbox.dataset.interface,
-                        serial: checkbox.dataset.serial,
-                        active_fw: checkbox.dataset.activeFw,
-                        standby_fw: checkbox.dataset.standbyFw,
-                        eq_id: checkbox.dataset.eqId
+                        chassis: data.chassis,
+                        slot: data.slot,
+                        port: data.port,
+                        onu_id: data.onuId,
+                        interface: data.interface,
+                        serial: data.serial,
+                        active_fw: data.activeFw,
+                        standby_fw: data.standbyFw,
+                        eq_id: data.eqId
                     });
                 });
-                
-                // Formatar comandos agrupados por hostname
+
+                let commandCount = 0;
                 Object.keys(commandsByHost).forEach(hostname => {
-                    commands.push(`\n=== ${hostname} ===`);
-                    commands.push(...commandsByHost[hostname]);
+                    commands.push(`\n━━━ ${hostname} ━━━`);
+                    commandsByHost[hostname].forEach(cmd => {
+                        commands.push(cmd);
+                        commandCount++;
+                    });
                 });
-                
-                commandsPreview.textContent = commands.join('\n');
-                updateBtn.disabled = false;
-                selectedOnusInput.value = JSON.stringify(selectedOnus);
-                
-                console.log('DEBUG JS: ONUs selecionadas para atualização:', selectedOnus);
+
+                this.commandsPreview.textContent = commands.join('\n');
+                this.commandCount.textContent = `(${commandCount} comandos)`;
+                this.updateBtn.disabled = false;
+                this.selectedOnusInput.value = JSON.stringify(selectedOnus);
             } else {
                 if (selectedCheckboxes.length === 0) {
-                    commandsPreview.textContent = 'Selecione ONUs para ver os comandos que serão executados...';
+                    this.commandsPreview.textContent = 'Selecione ONUs para visualizar os comandos...';
                 } else {
-                    commandsPreview.textContent = 'Informe o arquivo de firmware para ver os comandos...';
+                    this.commandsPreview.textContent = 'Informe o arquivo de firmware para visualizar os comandos...';
                 }
-                updateBtn.disabled = true;
-                selectedOnusInput.value = '';
+                this.commandCount.textContent = '(0 comandos)';
+                this.updateBtn.disabled = true;
+                this.selectedOnusInput.value = '';
             }
+
+            this.selectedCount.textContent = selectedCheckboxes.length;
         }
 
-        function showAlert(message, type) {
-            const existingAlert = document.getElementById('flashAlert');
-            if (existingAlert) {
-                existingAlert.remove();
+        async requestUpdate() {
+            const selectedOltsValues = document.getElementById('selected_olts').value;
+            const firmwareFile = this.firmwareInput.value.trim();
+            const selectedOnusData = this.selectedOnusInput.value;
+
+            if (!selectedOltsValues || !firmwareFile || !selectedOnusData || JSON.parse(selectedOnusData).length === 0) {
+                this.showAlert('Por favor, preencha o arquivo de firmware e selecione pelo menos uma ONU.', 'danger');
+                return;
             }
-            
-            const alertDiv = document.createElement('div');
-            alertDiv.id = 'flashAlert';
-            alertDiv.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                z-index: 9999;
-                min-width: 300px;
-                max-width: 600px;
-            `;
-            
-            alertDiv.innerHTML = `
-                <div class="alert alert-${type} alert-dismissible fade show shadow" role="alert">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" onclick="this.closest('#flashAlert').remove()"></button>
-                </div>
-            `;
-            
-            document.body.appendChild(alertDiv);
-            
-            setTimeout(() => {
-                if (document.getElementById('flashAlert')) {
-                    alertDiv.remove();
-                }
-            }, 5000);
-        }
 
-        if (updateBtn) {
-            updateBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                const selectedOltsValues = selectedOltsInput.value;
-                const firmwareFile = firmwareInput.value;
-                const selectedOnusData = selectedOnusInput.value;
-                
-                console.log('DEBUG JS: Dados para envio:');
-                console.log('- OLTs selecionadas:', selectedOltsValues);
-                console.log('- Firmware:', firmwareFile);
-                console.log('- ONUs selecionadas:', selectedOnusData);
-                
-                if (!selectedOltsValues || !firmwareFile || !selectedOnusData) {
-                    showAlert('Por favor, preencha todos os campos necessários e selecione pelo menos uma OLT e uma ONU', 'danger');
-                    return;
-                }
+            this.showLoading(true);
 
-                updateBtn.disabled = true;
-                updateBtnText.textContent = 'Enviando comandos...';
-                updateSpinner.style.display = 'inline-block';
-                
-                const requestData = {
-                    selected_olts: selectedOltsValues.split(','),
-                    firmware_file: firmwareFile,
-                    selected_onus: JSON.parse(selectedOnusData)
-                };
-                
-                console.log('DEBUG JS: Enviando requisição:', requestData);
-                
-                fetch("{{ url_for('att_onus_gpon_bp.att_onus_gpon_update') }}", {
+            try {
+                const response = await fetch("{{ url_for('att_onus_gpon_bp.att_onus_gpon_update') }}", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
                     },
-                    body: JSON.stringify(requestData)
-                })
-                .then(response => {
-                    console.log('DEBUG JS: Resposta recebida:', response);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('DEBUG JS: Dados da resposta:', data);
-                    if (data.success) {
-                        showAlert(data.message, 'success');
-                    } else {
-                        showAlert(data.message, 'danger');
-                    }
-                    
-                    if (data.details) {
-                        console.log('DEBUG JS: Detalhes da execução:', data.details);
-                    }
-                })
-                .catch(error => {
-                    console.error('ERROR JS: Erro na requisição:', error);
-                    showAlert('Erro na comunicação com o servidor: ' + error.message, 'danger');
-                })
-                .finally(() => {
-                    updateBtn.disabled = false;
-                    updateBtnText.textContent = 'Requisitar Atualização';
-                    updateSpinner.style.display = 'none';
+                    body: JSON.stringify({
+                        selected_olts: selectedOltsValues.split(','),
+                        firmware_file: firmwareFile,
+                        selected_onus: JSON.parse(selectedOnusData)
+                    })
                 });
-            });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    this.showAlert(data.message, 'success');
+                } else {
+                    const errorMessage = data.message || `Erro desconhecido: ${response.status} ${response.statusText}`;
+                    this.showAlert(errorMessage, 'danger');
+                }
+
+            } catch (error) {
+                this.showAlert('Erro na comunicação com o servidor: ' + error.message, 'danger');
+            } finally {
+                this.showLoading(false);
+            }
         }
 
-        updateSelectAllState();
-        updatePreview();
+        showLoading(show) {
+            if (show) {
+                this.updateBtn.disabled = true;
+                this.updateBtnText.textContent = 'Enviando comandos...';
+                this.updateSpinner.style.display = 'inline-block';
+            } else {
+                this.updateBtn.disabled = false;
+                this.updateBtnText.textContent = 'Requisitar Atualização';
+                this.updateSpinner.style.display = 'none';
+            }
+        }
+
+        showAlert(message, type) {
+            const existingAlert = document.querySelector('.alert-floating');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert-floating';
+
+            alertDiv.innerHTML = `
+                <div class="alert alert-${type}" role="alert">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                    <div>${message}</div>
+                    <button type="button" class="alert-close" onclick="this.closest('.alert-floating').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 8000);
+        }
+    }
+    
+    // Inicializar sistemas
+    if (document.getElementById('mainForm')) {
+        const oltSelector = new OLTSelector();
+        window.oltSelector = oltSelector;
+
+        if (document.getElementById('onusTable')) {
+            const tableFilter = new TableFilter();
+            const onuManager = new ONUManager();
+            window.tableFilter = tableFilter;
+            window.onuManager = onuManager;
+        }
     }
 });
 </script>

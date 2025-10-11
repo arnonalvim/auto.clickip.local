@@ -7,7 +7,7 @@ class Att_onus_gpon_form(FlaskForm):
     hostname = SelectField('Hostname', validators=[DataRequired()], choices=[])
     # Campo oculto para armazenar as OLTs selecionadas (valores separados por vírgula)
     selected_olts = HiddenField()
-    # Adicionei "*" como primeira opção
+    # "*" como primeira opção serve para marcar tudo
     chassis = SelectField(
         'Chassis',
         validators=[DataRequired()],
@@ -19,10 +19,10 @@ class Att_onus_gpon_form(FlaskForm):
         choices=[(str(i), str(i)) for i in range(1, 3)] + [('*', '* (Todas)')]
     )
     port_id = SelectField(
-        'Port ID',
+        'Porta',
         validators=[DataRequired()],
         choices=[(str(i), str(i)) for i in range(1, 33)] + [('*', '* (Todas)')]
     )
-    firmware_file = StringField('Arquivo de Firmware')
+    firmware_file = StringField('Nome FW')
     selected_onus = HiddenField()
     submit_get_info = SubmitField('Buscar ONUs')
